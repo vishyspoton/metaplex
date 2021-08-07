@@ -43,10 +43,10 @@
   },
   "scripts": {
     "prestart": "npm-link-shared ../common/node_modules/ . react",
-    "start": "nodemon",
-    "build": "next build && tsc --project tsconfig.server.json",
+    "start": "next dev",
+    "build": "next build",
     "export": "next export -o ../../build/web",
-    "start:prod": "cross-env NODE_ENV=production node dist/server.js",
+    "start:prod": "next start",
     "test": "jest",
     "deploy:s3": "yarn export && aws s3 sync ../../build/web",
     "deploy:ar": "yarn export && arweave deploy-dir  ../../build/web --key-file ",
