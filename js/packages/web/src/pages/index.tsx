@@ -21,6 +21,10 @@ export async function getServerSideProps(context: NextPageContext) {
 
     return acc;
   }, {});
+
+  console.log(`headers: ${JSON.stringify(headers)}`);
+  console.log(`forwarded: ${JSON.stringify(forwarded)}`);
+
   const host = (forwarded?.host || headers.host) as string;
   const subdomain = host.split(':')[0].split('.')[0];
 
