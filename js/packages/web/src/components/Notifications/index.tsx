@@ -186,7 +186,7 @@ export function useSettlementAuctions({
         .filter(
           a =>
             walletPubkey &&
-            a.auctionManager.info.authority.equals(walletPubkey) &&
+            a.auctionManager.authority.equals(walletPubkey) &&
             a.auction.info.ended(),
         )
         .sort(
@@ -200,7 +200,7 @@ export function useSettlementAuctions({
           CALLING_MUTEX[av.auctionManager.pubkey.toBase58()] = true;
           try {
             const balance = await connection.getTokenAccountBalance(
-              av.auctionManager.info.acceptPayment,
+              av.auctionManager.acceptPayment,
             );
             if (
               ((balance.value.uiAmount || 0) === 0 &&
@@ -231,7 +231,7 @@ export function useSettlementAuctions({
     if (!auctionView) return;
     const winners = [...auctionView.auction.info.bidState.bids]
       .reverse()
-      .slice(0, auctionView.auctionManager.info.settings.winningConfigs.length)
+      .slice(0, auctionView.auctionManager.numWinners.toNumber())
       .reduce((acc: Record<string, boolean>, r) => {
         acc[r.key.toBase58()] = true;
         return acc;
@@ -240,12 +240,12 @@ export function useSettlementAuctions({
     const myPayingAccount = accountByMint.get(
       auctionView.auction.info.tokenMint.toBase58(),
     );
-    const auctionKey = auctionView.auction.pubkey.toBase58();
+    const auctionKey = auctionView.auction.pubkey;
     const bidsToClaim = Object.values(bidderPotsByAuctionAndBidder).filter(
       b =>
         winners[b.info.bidderAct.toBase58()] &&
         !b.info.emptied &&
-        b.info.auctionAct.toBase58() === auctionKey,
+        b.info.auctionAct.equals(auctionKey),
     );
     if (bidsToClaim.length || validDiscoveredEndedAuctions[auctionViewKey] > 0)
       notifications.push({
@@ -294,6 +294,7 @@ export function Notifications() {
   const possiblyBrokenAuctionManagerSetups = useAuctions(
     AuctionViewState.Defective,
   );
+
   const upcomingAuctions = useAuctions(AuctionViewState.Upcoming);
   const connection = useConnection();
   const { wallet } = useWallet();
@@ -301,7 +302,7 @@ export function Notifications() {
 
   const notifications: NotificationCard[] = [];
 
-  const walletPubkey = wallet?.publicKey?.toBase58() || '';
+  const walletPubkey = wallet?.publicKey ?? undefined;
 
   useCollapseWrappedSol({ connection, wallet, notifications });
 
@@ -311,7 +312,8 @@ export function Notifications() {
     () =>
       Object.values(vaults).filter(
         v =>
-          v.info.authority.toBase58() === walletPubkey &&
+          walletPubkey !== undefined &&
+          v.info.authority.equals(walletPubkey) &&
           v.info.state !== VaultState.Deactivated &&
           v.info.tokenTypeCount > 0,
       ),
@@ -346,7 +348,11 @@ export function Notifications() {
   });
 
   possiblyBrokenAuctionManagerSetups
-    .filter(v => v.auctionManager.info.authority.toBase58() === walletPubkey)
+    .filter(
+      v =>
+        walletPubkey !== undefined &&
+        v.auctionManager.authority.equals(walletPubkey),
+    )
     .forEach(v => {
       notifications.push({
         id: v.auctionManager.pubkey.toBase58(),
@@ -383,7 +389,10 @@ export function Notifications() {
             ?.activated ||
             store?.info.public) &&
           m.info.data.creators.find(
-            c => c.address.toBase58() === walletPubkey && !c.verified,
+            c =>
+              walletPubkey !== undefined &&
+              c.address.equals(walletPubkey) &&
+              !c.verified,
           )
         );
       }),
@@ -415,7 +424,11 @@ export function Notifications() {
   });
 
   upcomingAuctions
-    .filter(v => v.auctionManager.info.authority.toBase58() === walletPubkey)
+    .filter(
+      v =>
+        walletPubkey !== undefined &&
+        v.auctionManager.authority.equals(walletPubkey),
+    )
     .forEach(v => {
       notifications.push({
         id: v.auctionManager.pubkey.toBase58(),
