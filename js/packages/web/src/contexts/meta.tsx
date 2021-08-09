@@ -614,7 +614,7 @@ const processAuctions = (
   a: PublicKeyAndAccount<Buffer>,
   setter: UpdateStateValueFunc,
 ) => {
-  if (a.account.owner.toBase58() !== programIds().auction.toBase58()) return;
+  if (!a.account.owner.equals(programIds().auction)) return;
 
   try {
     const account = cache.add(
