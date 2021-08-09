@@ -172,9 +172,9 @@ export const ArtContent = ({
   animationURL?: string;
   files?: (MetadataFile | string)[];
 }) => {
-  const id = typeof pubkey === 'string' ? pubkey : pubkey?.toBase58() || '';
+  const key = typeof pubkey === 'string' ? new PublicKey(pubkey) : pubkey;
 
-  const { ref, data } = useExtendedArt(id);
+  const { ref, data } = useExtendedArt(key);
 
   if(pubkey && data) {
     files = data.properties.files;

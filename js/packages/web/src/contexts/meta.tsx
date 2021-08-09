@@ -690,17 +690,17 @@ const processMetaplexAccounts = async (
   setter: UpdateStateValueFunc,
   useAll: boolean,
 ) => {
-  if (a.account.owner.toBase58() !== programIds().metaplex.toBase58()) return;
+  if (!a.account.owner.equals(programIds().metaplex)) return;
 
   try {
-    const STORE_ID = programIds().store?.toBase58() || '';
+    const STORE_ID = programIds().store;
 
     if (
       a.account.data[0] === MetaplexKey.AuctionManagerV1 ||
       a.account.data[0] === MetaplexKey.AuctionManagerV2
     ) {
       const storeKey = new PublicKey(a.account.data.slice(1, 33));
-      if (storeKey.toBase58() === STORE_ID || useAll) {
+      if ((STORE_ID !== undefined && storeKey.equals(STORE_ID)) || useAll) {
         const auctionManager = decodeAuctionManager(a.account.data);
 
         const account: ParsedAccount<AuctionManagerV1 | AuctionManagerV2> = {
@@ -759,7 +759,7 @@ const processMetaplexAccounts = async (
         account: a.account,
         info: store,
       };
-      if (a.pubkey.toBase58() === STORE_ID) {
+      if (STORE_ID !== undefined && a.pubkey.equals(STORE_ID)) {
         setter('store', a.pubkey.toBase58(), account);
       }
       setter('stores', a.pubkey.toBase58(), account);
@@ -783,9 +783,7 @@ const processMetaplexAccounts = async (
       const creatorKeyIfCreatorWasPartOfThisStore = await getWhitelistedCreator(
         whitelistedCreator.address,
       );
-      if (
-        creatorKeyIfCreatorWasPartOfThisStore.toBase58() === a.pubkey.toBase58()
-      ) {
+      if (creatorKeyIfCreatorWasPartOfThisStore.equals(a.pubkey)) {
         const account = cache.add(
           a.pubkey,
           a.account,
@@ -817,8 +815,7 @@ const processMetaData = (
   meta: PublicKeyAndAccount<Buffer>,
   setter: UpdateStateValueFunc,
 ) => {
-  if (meta.account.owner.toBase58() !== programIds().metadata.toBase58())
-    return;
+  if (!meta.account.owner.equals(programIds().metadata)) return;
 
   try {
     if (meta.account.data[0] === MetadataKey.MetadataV1) {
@@ -889,7 +886,7 @@ const processVaultData = (
   a: PublicKeyAndAccount<Buffer>,
   setter: UpdateStateValueFunc,
 ) => {
-  if (a.account.owner.toBase58() !== programIds().vault.toBase58()) return;
+  if (!a.account.owner.equals(programIds().vault)) return;
   try {
     if (a.account.data[0] === VaultKey.SafetyDepositBoxV1) {
       const safetyDeposit = decodeSafetyDeposit(a.account.data);

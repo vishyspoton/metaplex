@@ -136,12 +136,15 @@ export const useArt = (id?: PublicKey | string) => {
   const { metadata, editions, masterEditions, whitelistedCreatorsByCreator } =
     useMeta();
 
-  const key = typeof id === 'string' ? id : id?.toBase58() || '';
+  const account = useMemo(() => {
+    if (id === undefined) {
+      return undefined;
+    }
 
-  const account = useMemo(
-    () => metadata.find(a => a.pubkey.toBase58() === key),
-    [key, metadata],
-  );
+    const key = typeof id === 'string' ? new PublicKey(id) : id;
+
+    return metadata.find(a => a.pubkey.equals(key));
+  }, [id, metadata]);
 
   const art = useMemo(
     () =>
@@ -163,12 +166,15 @@ export const useExtendedArt = (id?: PublicKey | string) => {
   const [data, setData] = useState<IMetadataExtension>();
   const { ref, inView } = useInView();
 
-  const key = typeof id === 'string' ? id : id?.toBase58() || '';
+  const account = useMemo(() => {
+    if (id === undefined) {
+      return undefined;
+    }
 
-  const account = useMemo(
-    () => metadata.find(a => a.pubkey.toBase58() === key),
-    [key, metadata],
-  );
+    const key = typeof id === 'string' ? new PublicKey(id) : id;
+
+    return metadata.find(a => a.pubkey.equals(key));
+  }, [id, metadata]);
 
   useEffect(() => {
     if (inView && id && !data) {
