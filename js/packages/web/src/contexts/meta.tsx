@@ -244,7 +244,7 @@ export function MetaProvider({ children = null as any }) {
   useEffect(() => {
     let dispose = () => {};
     (async () => {
-      console.log('-----> Query started');
+      console.log('-----> Query started', new Date());
       const accounts = (
         await Promise.all([
           connection.getProgramAccounts(programIds().vault),
@@ -256,7 +256,7 @@ export function MetaProvider({ children = null as any }) {
 
       await setProgramIds(env);
 
-      console.log('------->Query finished');
+      console.log('-------> Query finished', new Date());
 
       const tempCache: MetaState = {
         metadata: [],
