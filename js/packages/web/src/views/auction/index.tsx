@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Row, Col, Button, Skeleton, Carousel } from 'antd';
 import { AuctionCard } from '../../components/AuctionCard';
 import { Connection } from '@solana/web3.js';
+import Head from 'next/head'
 import {
   AuctionView as Auction,
   AuctionViewItem,
@@ -123,6 +124,10 @@ export const AuctionView = () => {
 
   return (
     <>
+      <Head>
+        <meta name="twitter:title" content={art.title} key={'title'} />
+        <meta name="twitter:image" content={data?.image} key={'image'} />
+      </Head>
       <Row justify="space-around" ref={ref}>
         <Col span={24} md={12} className="pr-4">
           <div className="auction-view" style={{ minHeight: 300 }}>

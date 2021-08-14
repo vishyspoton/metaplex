@@ -88,6 +88,9 @@ function App({ storefront }: AppProps) {
           </>
         )}
         <meta name="description" content={storefront.meta.description} />
+        
+        <meta name="twitter:description" content={storefront.meta.description} />
+        <meta name="twitter:card" content="summary" />
         <title>{storefront.meta.title}</title>
       </Head>
       {isMounted && <CreateReactAppEntryPoint storeId={storefront.pubkey} />}
