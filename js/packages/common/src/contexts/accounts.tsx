@@ -319,7 +319,10 @@ const UseNativeAccount = () => {
   const updateCache = useCallback(
     account => {
       if (wallet && wallet.publicKey) {
-        const wrapped = wrapNativeAccount(wallet.publicKey, account);
+        const wrapped = wrapNativeAccount(
+          wallet.publicKey?.toBase58(),
+          account,
+        );
         if (wrapped !== undefined && wallet) {
           const id = wallet.publicKey?.toBase58();
           cache.registerParser(id, TokenAccountParser);
@@ -377,6 +380,7 @@ const precacheUserTokenAccounts = async (
   const accounts = await connection.getTokenAccountsByOwner(owner, {
     programId: programIds().token,
   });
+
   accounts.value.forEach(info => {
     cache.add(info.pubkey.toBase58(), info.account, TokenAccountParser);
   });
@@ -393,11 +397,15 @@ export function AccountsProvider({ children = null as any }) {
     return cache
       .byParser(TokenAccountParser)
       .map(id => cache.get(id))
+<<<<<<< HEAD
       .filter(
         a => a && a.info.owner.toBase58() === wallet?.publicKey?.toBase58(),
       )
+=======
+      .filter(a => a && a.info.owner.toBase58() === walletKey)
+>>>>>>> 216501f51ade499eb59555913cd44cdb5f4a64ad
       .map(a => a as TokenAccount);
-  }, [wallet]);
+  }, [walletKey]);
 
   useEffect(() => {
     const accounts = selectUserAccounts().filter(
