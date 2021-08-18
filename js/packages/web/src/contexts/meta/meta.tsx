@@ -1,5 +1,6 @@
 import {
   useConnection,
+  useConnectionConfig,
   useStore,
   AUCTION_ID,
   METAPLEX_ID,
@@ -56,6 +57,7 @@ const MetaContext = React.createContext<MetaContextState>({
 
 export function MetaProvider({ children = null as any }) {
   const connection = useConnection();
+  const { endpoint } = useConnectionConfig();
   const { isReady, storeAddress } = useStore();
   const searchParams = useQuerySearch();
   const all = searchParams.get('all') == 'true';
@@ -121,7 +123,7 @@ export function MetaProvider({ children = null as any }) {
 
       console.log('-----> Query started');
 
-      const nextState = await loadAccounts(connection, all);
+      const nextState = await loadAccounts(connection, endpoint, all);
 
       console.log('------->Query finished', new Date());
 

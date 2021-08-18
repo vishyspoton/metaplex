@@ -26,6 +26,7 @@
     "cross-env": "^7.0.3",
     "chart.js": "^3.5.0",
     "eventemitter3": "^4.0.7",
+    "holaplex-rpc-cache-server": "^0.1.0",
     "less": "^4.1.1",
     "less-loader": "^10.0.1",
     "lodash": "^4.17.20",

@@ -7,6 +7,7 @@ import {
   VAULT_ID,
 } from '@oyster/common/dist/lib/utils/ids';
 import { AccountInfo, Connection, PublicKey } from '@solana/web3.js';
+import { ConnectionProxy } from 'holaplex-rpc-cache-server';
 import { AccountAndPubkey, MetaState, ProcessAccountsFunc } from './types';
 import { isMetadataPartOfStore } from './isMetadataPartOfStore';
 import { processAuctions } from './processAuctions';
@@ -14,6 +15,7 @@ import { processMetaplexAccounts } from './processMetaplexAccounts';
 import { processMetaData } from './processMetaData';
 import { processVaultData } from './processVaultData';
 import {
+  RPC_CACHE_ENDPOINTS,
   getEdition,
   getMultipleAccounts,
   MAX_CREATOR_LEN,
@@ -81,7 +83,11 @@ async function getProgramAccounts(
   return data;
 }
 
-export const loadAccounts = async (connection: Connection, all: boolean) => {
+export const loadAccounts = async (
+  connection: Connection,
+  endpoint: string,
+  all: boolean,
+) => {
   const tempCache: MetaState = {
     metadata: [],
     metadataByMint: {},
@@ -121,6 +127,17 @@ export const loadAccounts = async (connection: Connection, all: boolean) => {
     process.env.NEXT_PUBLIC_BIG_STORE?.toLowerCase() === 'true';
   console.log(`Is big store: ${IS_BIG_STORE}`);
 
+  const proxyConnection = async () => {
+    const rpcEndpoint = RPC_CACHE_ENDPOINTS[endpoint];
+
+    if (rpcEndpoint === undefined) {
+      console.warn(`Not proxying connection for endpoint '${endpoint}'`);
+      return connection;
+    }
+
+    return ConnectionProxy(endpoint, rpcEndpoint, connection.commitment);
+  };
+
   const promises = [
     getProgramAccounts(connection, VAULT_ID).then(forEach(processVaultData)),
     getProgramAccounts(connection, AUCTION_ID).then(forEach(processAuctions)),
@@ -129,9 +146,11 @@ export const loadAccounts = async (connection: Connection, all: boolean) => {
       forEach(processMetaplexAccounts),
     ),
     IS_BIG_STORE
-      ? getProgramAccounts(connection, METADATA_PROGRAM_ID).then(
-          forEach(processMetaData),
-        )
+      ? proxyConnection()
+          .then(connection =>
+            getProgramAccounts(connection, METADATA_PROGRAM_ID),
+          )
+          .then(forEach(processMetaData))
       : undefined,
     getProgramAccounts(connection, METAPLEX_ID, {
       filters: [
@@ -153,9 +172,11 @@ export const loadAccounts = async (connection: Connection, all: boolean) => {
       if (whitelistedCreators.length > 3) {
         console.log(' too many creators, pulling all nfts in one go');
         additionalPromises.push(
-          getProgramAccounts(connection, METADATA_PROGRAM_ID).then(
-            forEach(processMetaData),
-          ),
+          proxyConnection()
+            .then(connection =>
+              getProgramAccounts(connection, METADATA_PROGRAM_ID),
+            )
+            .then(forEach(processMetaData)),
         );
       } else {
         console.log('pulling optimized nfts');
