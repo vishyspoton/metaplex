@@ -59,7 +59,7 @@ export const ENDPOINTS = [
 ];
 
 export const RPC_CACHE_ENDPOINTS: Record<string, string> = {
-  'https://api.metaplex.solana.com/': 'http://rpc-c-reade-1wtcyajnc7qy-1768909736.us-west-2.elb.amazonaws.com'
+  'https://api.metaplex.solana.com/': 'https://rpc.cache.holaplex.com'
 };
 
 const DEFAULT = ENDPOINTS[0].endpoint;
