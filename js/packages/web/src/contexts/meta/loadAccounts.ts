@@ -127,7 +127,7 @@ export const loadAccounts = async (
     process.env.NEXT_PUBLIC_BIG_STORE?.toLowerCase() === 'true';
   console.log(`Is big store: ${IS_BIG_STORE}`);
 
-  const proxyConnection = async () => {
+  const proxyConnection = (async () => {
     const rpcEndpoint = RPC_CACHE_ENDPOINTS[endpoint];
 
     if (rpcEndpoint === undefined) {
@@ -136,23 +136,21 @@ export const loadAccounts = async (
     }
 
     return ConnectionProxy(endpoint, rpcEndpoint, connection.commitment);
-  };
+  })();
+
+  const getProgramAccountsProxy = (id: string, configOrCommitment?: any) =>
+    proxyConnection.then(p => getProgramAccounts(p, id, configOrCommitment));
 
   const promises = [
-    getProgramAccounts(connection, VAULT_ID).then(forEach(processVaultData)),
-    getProgramAccounts(connection, AUCTION_ID).then(forEach(processAuctions)),
-    ,
-    getProgramAccounts(connection, METAPLEX_ID).then(
-      forEach(processMetaplexAccounts),
-    ),
+    getProgramAccountsProxy(VAULT_ID).then(forEach(processVaultData)),
+    getProgramAccountsProxy(AUCTION_ID).then(forEach(processAuctions)),
+    getProgramAccountsProxy(METAPLEX_ID).then(forEach(processMetaplexAccounts)),
     IS_BIG_STORE
-      ? proxyConnection()
-          .then(connection =>
-            getProgramAccounts(connection, METADATA_PROGRAM_ID),
-          )
-          .then(forEach(processMetaData))
+      ? getProgramAccountsProxy(METADATA_PROGRAM_ID).then(
+          forEach(processMetaData),
+        )
       : undefined,
-    getProgramAccounts(connection, METAPLEX_ID, {
+    getProgramAccountsProxy(METAPLEX_ID, {
       filters: [
         {
           dataSize: MAX_WHITELISTED_CREATOR_SIZE,
@@ -172,11 +170,9 @@ export const loadAccounts = async (
       if (whitelistedCreators.length > 3) {
         console.log(' too many creators, pulling all nfts in one go');
         additionalPromises.push(
-          proxyConnection()
-            .then(connection =>
-              getProgramAccounts(connection, METADATA_PROGRAM_ID),
-            )
-            .then(forEach(processMetaData)),
+          getProgramAccountsProxy(METADATA_PROGRAM_ID).then(
+            forEach(processMetaData),
+          ),
         );
       } else {
         console.log('pulling optimized nfts');
@@ -184,7 +180,7 @@ export const loadAccounts = async (
         for (let i = 0; i < MAX_CREATOR_LIMIT; i++) {
           for (let j = 0; j < whitelistedCreators.length; j++) {
             additionalPromises.push(
-              getProgramAccounts(connection, METADATA_PROGRAM_ID, {
+              getProgramAccountsProxy(METADATA_PROGRAM_ID, {
                 filters: [
                   {
                     memcmp: {
