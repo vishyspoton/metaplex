@@ -49,6 +49,7 @@ const rerun = async ({
   setUsersWithMetadata,
   setUsersBid,
   setUsersEngaged,
+  setTotalAuctions,
 }: {
   auctionViews: AuctionView[];
   auctionManagersByAuction: Record<
@@ -107,6 +108,7 @@ const rerun = async ({
         let highestBid = bids.getAmountAt(0);
         if (highestBid && highestBid.toNumber() > newHighestSale) {
           newHighestSale = highestBid.toNumber();
+          console.log(auction.auctionManager.authority)
         }
         const allWinningBids = bids.bids
           .slice(bids.bids.length - bids.max.toNumber())
@@ -160,6 +162,7 @@ const rerun = async ({
   setHighestSale(newHighestSale);
   setSortedSales(newSortedSales.sort());
   setUsersWithMetadata(newBuild);
+  setTotalAuctions(totalAuctions)
   setUsersBid(newUsersBid);
   setUsersEngaged(engaged => ({ ...engaged, ...existingUsersEngaged }));
 };
@@ -289,6 +292,7 @@ function InnerAnalytics({ mint }: { mint: MintInfo }) {
   const [usersWithMetadata, setUsersWithMetadata] = useState<
     Record<string, boolean>
   >({});
+  const [totalAuctions, setTotalAuctions] = useState<number>(0)
   const [usersPublished, setUsersPublished] = useState<Record<string, boolean>>(
     {},
   );
@@ -318,6 +322,7 @@ function InnerAnalytics({ mint }: { mint: MintInfo }) {
   const totalMarketplaces = Object.values(stores).length;
 
   const auctionViews = useAuctions();
+  // how is this bucketed to pubkey
 
   return (
     <Content>
@@ -343,20 +348,12 @@ function InnerAnalytics({ mint }: { mint: MintInfo }) {
               setUsersWithMetadata,
               setUsersBid,
               setUsersEngaged,
+              setTotalAuctions,
             })
           }
         >
           RERUN CALCULATION
         </Button>
-        <h1>Overview</h1>
-        <h3>
-          Total NFTs: {totalNFTs} Total Marketplaces: {totalMarketplaces}
-        </h3>
-        <h1>User Breakdown</h1>
-        <h3>Any Engagement: {Object.values(usersEngaged).length}</h3>
-        <h3>That bid: {Object.values(usersBid).length}</h3>
-        <h3>That sold items: {Object.values(usersPublished).length}</h3>
-        <h3>That minted NFTs: {Object.values(usersWithMetadata).length}</h3>
         <h1>Sale Info</h1>
         <h3>
           Total Sales: ◎
@@ -369,6 +366,7 @@ function InnerAnalytics({ mint }: { mint: MintInfo }) {
 
         <h3>Highest Sale: ◎ {fromLamports(highestSale, mint)}</h3>
         <h3>Average Sale: ◎ {fromLamports(averageSale, mint)}</h3>
+        <h3>total a: {totalAuctions}</h3>
         <h1>Auction Info</h1>
         <h3>Average Bids per Auction: {averageBids}</h3>
         <MemoizedPie byType={byType} />

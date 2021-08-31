@@ -13,6 +13,7 @@ import {
 } from '@oyster/common';
 import { useWallet } from '@solana/wallet-adapter-react';
 import BN from 'bn.js';
+import next from 'next';
 import { useEffect, useState } from 'react';
 import { useMeta } from '../contexts';
 import {
@@ -133,6 +134,9 @@ export const useAuctions = (state?: AuctionViewState) => {
     bidRedemptionV2sByAuctionManagerAndWinningIndex,
   } = useMeta();
 
+  console.log(Object.keys(auctionManagersByAuction).length, 'ambal use a');
+  console.log(Object.keys(auctions).length, 'auctions use a');
+
   useEffect(() => {
     const map = Object.keys(auctions).reduce((agg, a) => {
       const auction = auctions[a];
@@ -158,6 +162,10 @@ export const useAuctions = (state?: AuctionViewState) => {
       return agg;
     }, {} as Record<string, AuctionView | undefined>);
 
+    console.log(
+      Object.keys(map).filter(v => v).length,
+      'after process into auction view',
+    );
     setAuctionViews(
       (Object.values(map).filter(v => v) as AuctionView[]).sort((a, b) => {
         return (
@@ -439,11 +447,11 @@ export function processAccountsIntoAuctionView(
             view.participationItem)) &&
         view.vault
       );
-      if (
-        (!view.thumbnail || !view.thumbnail.metadata) &&
-        desiredState != AuctionViewState.Defective
-      )
-        return undefined;
+      // if (
+      //   (!view.thumbnail || !view.thumbnail.metadata) &&
+      //   desiredState != AuctionViewState.Defective
+      // )
+      //   return undefined;
 
       return view as AuctionView;
     }
