@@ -43,7 +43,11 @@ import { AmountLabel } from '../../components/AmountLabel';
 import useWindowDimensions from '../../utils/layout';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { useMeta } from '../../contexts';
-import { TreasuryInfo, useHasTreasury, useTreasuryInfo } from '../../utils/treasury';
+import {
+  TreasuryInfo,
+  useHasTreasury,
+  useTreasuryInfo,
+} from '../../utils/treasury';
 
 const { Step } = Steps;
 const { Dragger } = Upload;
@@ -81,7 +85,9 @@ export const ArtCreateView = () => {
   });
 
   const hasTreasury = useHasTreasury(whitelistedCreatorsByCreator);
-  const treasuryInfo = useTreasuryInfo();
+  let treasuryInfo = useTreasuryInfo();
+
+  if (!hasTreasury) treasuryInfo = undefined;
 
   const gotoStep = useCallback(
     (_step: number) => {
@@ -100,7 +106,7 @@ export const ArtCreateView = () => {
   const mint = async () => {
     if (hasTreasury && treasuryInfo) {
       const share = attributes.creators?.find(
-        c => c.address === treasuryInfo.pubkey,
+        c => c.address === treasuryInfo?.pubkey,
       )?.share;
 
       if (share === undefined || share < treasuryInfo.split) gotoStep(3);
@@ -794,6 +800,8 @@ const RoyaltiesSplitter = (props: {
             );
           };
 
+          const min = props.minRoyalty[creator.value] ?? 0;
+
           return (
             <Col span={24} key={idx}>
               <Row
@@ -806,7 +814,7 @@ const RoyaltiesSplitter = (props: {
                 </Col>
                 <Col span={3}>
                   <InputNumber<number>
-                    min={props.minRoyalty[creator.value] ?? 0}
+                    min={min}
                     max={100}
                     formatter={value => `${value}%`}
                     value={amt}
@@ -816,7 +824,12 @@ const RoyaltiesSplitter = (props: {
                   />
                 </Col>
                 <Col span={4} style={{ paddingLeft: 12 }}>
-                  <Slider value={amt} onChange={handleChangeShare} />
+                  <Slider
+                    value={amt}
+                    min={min}
+                    max={100}
+                    onChange={handleChangeShare}
+                  />
                 </Col>
                 {(props.isShowErrors && amt === 0 && (
                   <Col style={{ paddingLeft: 12 }}>
@@ -825,15 +838,22 @@ const RoyaltiesSplitter = (props: {
                     </Text>
                   </Col>
                 )) ||
-                  (amt < props.minRoyalty[creator.value] ??
+                  (amt < min ??
                     (0 && (
                       <Col style={{ paddingLeft: 12 }}>
                         <Text type="danger">
                           The split percentage for this creator cannot be less
-                          than {props.minRoyalty[creator.value] ?? 0}%
+                          than {min}%
                         </Text>
                       </Col>
-                    )))}
+                    ))) ||
+                  (min > 0 && (
+                    <Col style={{ paddingLeft: 12 }}>
+                      <Text>
+                        The minimum split percentage for this creator is {min}%.
+                      </Text>
+                    </Col>
+                  ))}
               </Row>
             </Col>
           );
@@ -892,10 +912,20 @@ const RoyaltiesStep = (props: {
   }, [connected, setCreators]);
 
   useEffect(() => {
+    // Don't automatically allocate the treasury more than the minimum split
+    const split = props.treasury?.split ?? 0;
+
+    const amt = Math.trunc(
+      (100 - split) /
+        [...fixedCreators, ...creators].filter(
+          c => c.value === props.treasury?.pubkey,
+        ).length,
+    );
+
     setRoyalties(
       [...fixedCreators, ...creators].map(creator => ({
         creatorKey: creator.key,
-        amount: Math.trunc(100 / [...fixedCreators, ...creators].length),
+        amount: creator.value === props.treasury?.pubkey ? split : amt,
       })),
     );
   }, [creators, fixedCreators]);
