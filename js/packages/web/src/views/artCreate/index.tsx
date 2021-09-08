@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Steps,
   Row,
@@ -42,6 +42,8 @@ import { cleanName, getLast } from '../../utils/utils';
 import { AmountLabel } from '../../components/AmountLabel';
 import useWindowDimensions from '../../utils/layout';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { useMeta } from '../../contexts';
+import { TreasuryInfo, useHasTreasury, useTreasuryInfo } from '../../utils/treasury';
 
 const { Step } = Steps;
 const { Dragger } = Upload;
@@ -54,6 +56,7 @@ export const ArtCreateView = () => {
   const { step_param }: { step_param: string } = useParams();
   const history = useHistory();
   const { width } = useWindowDimensions();
+  const { whitelistedCreatorsByCreator } = useMeta();
 
   const [step, setStep] = useState<number>(0);
   const [stepsVisible, setStepsVisible] = useState<boolean>(true);
@@ -77,6 +80,9 @@ export const ArtCreateView = () => {
     },
   });
 
+  const hasTreasury = useHasTreasury(whitelistedCreatorsByCreator);
+  const treasuryInfo = useTreasuryInfo();
+
   const gotoStep = useCallback(
     (_step: number) => {
       history.push(`/art/create/${_step.toString()}`);
@@ -92,6 +98,14 @@ export const ArtCreateView = () => {
 
   // store files
   const mint = async () => {
+    if (hasTreasury && treasuryInfo) {
+      const share = attributes.creators?.find(
+        c => c.address === treasuryInfo.pubkey,
+      )?.share;
+
+      if (share === undefined || share < treasuryInfo.split) gotoStep(3);
+    }
+
     const metadata = {
       name: attributes.name,
       symbol: attributes.symbol,
@@ -187,6 +201,7 @@ export const ArtCreateView = () => {
               attributes={attributes}
               confirm={() => gotoStep(4)}
               setAttributes={setAttributes}
+              treasury={treasuryInfo}
             />
           )}
           {step === 4 && (
@@ -750,6 +765,7 @@ const InfoStep = (props: {
 const RoyaltiesSplitter = (props: {
   creators: Array<UserValue>;
   royalties: Array<Royalty>;
+  minRoyalty: Record<string, number>;
   setRoyalties: Function;
   isShowErrors?: boolean;
 }) => {
@@ -790,7 +806,7 @@ const RoyaltiesSplitter = (props: {
                 </Col>
                 <Col span={3}>
                   <InputNumber<number>
-                    min={0}
+                    min={props.minRoyalty[creator.value] ?? 0}
                     max={100}
                     formatter={value => `${value}%`}
                     value={amt}
@@ -802,13 +818,22 @@ const RoyaltiesSplitter = (props: {
                 <Col span={4} style={{ paddingLeft: 12 }}>
                   <Slider value={amt} onChange={handleChangeShare} />
                 </Col>
-                {props.isShowErrors && amt === 0 && (
+                {(props.isShowErrors && amt === 0 && (
                   <Col style={{ paddingLeft: 12 }}>
                     <Text type="danger">
                       The split percentage for this creator cannot be 0%.
                     </Text>
                   </Col>
-                )}
+                )) ||
+                  (amt < props.minRoyalty[creator.value] ??
+                    (0 && (
+                      <Col style={{ paddingLeft: 12 }}>
+                        <Text type="danger">
+                          The split percentage for this creator cannot be less
+                          than {props.minRoyalty[creator.value] ?? 0}%
+                        </Text>
+                      </Col>
+                    )))}
               </Row>
             </Col>
           );
@@ -821,6 +846,7 @@ const RoyaltiesSplitter = (props: {
 const RoyaltiesStep = (props: {
   attributes: IMetadataExtension;
   setAttributes: (attr: IMetadataExtension) => void;
+  treasury: TreasuryInfo | undefined;
   confirm: () => void;
 }) => {
   // const file = props.attributes.image;
@@ -832,15 +858,35 @@ const RoyaltiesStep = (props: {
   const [showCreatorsModal, setShowCreatorsModal] = useState<boolean>(false);
   const [isShowErrors, setIsShowErrors] = useState<boolean>(false);
 
+  const minRoyalty = useMemo(() => {
+    if (props.treasury !== undefined)
+      return { [props.treasury.pubkey]: props.treasury.split };
+
+    return {};
+  }, [props.treasury]);
+
   useEffect(() => {
     if (publicKey) {
       const key = publicKey.toBase58();
+      const treasuryKey = props.treasury?.pubkey;
+      const treasuryCreators =
+        treasuryKey === undefined
+          ? []
+          : [
+              {
+                key: treasuryKey,
+                label: shortenAddress(treasuryKey),
+                value: treasuryKey,
+              },
+            ];
+
       setFixedCreators([
         {
           key,
           label: shortenAddress(key),
           value: key,
         },
+        ...treasuryCreators,
       ]);
     }
   }, [connected, setCreators]);
@@ -907,6 +953,7 @@ const RoyaltiesStep = (props: {
               royalties={royalties}
               setRoyalties={setRoyalties}
               isShowErrors={isShowErrors}
+              minRoyalty={minRoyalty}
             />
           </label>
         </Row>

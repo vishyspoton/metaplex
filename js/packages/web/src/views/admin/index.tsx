@@ -37,6 +37,7 @@ import {
 } from '../../actions/convertMasterEditions';
 import { Link } from 'react-router-dom';
 import { SetupVariables } from '../../components/SetupVariables';
+import { useHasTreasury, useTreasuryInfo } from '../../utils/treasury';
 
 const { Content } = Layout;
 export const AdminView = () => {
@@ -213,6 +214,9 @@ function InnerAdminView({
     fn();
   }, [connected]);
 
+  const treasuryInfo = useTreasuryInfo();
+  const hasTreasury = useHasTreasury(whitelistedCreatorsByCreator);
+
   const uniqueCreators = Object.values(whitelistedCreatorsByCreator).reduce(
     (acc: Record<string, WhitelistedCreator>, e) => {
       acc[e.info.address] = e.info;
@@ -242,6 +246,7 @@ function InnerAdminView({
       render: (
         value: boolean,
         record: {
+          treasury: boolean;
           address: StringPublicKey;
           activated: boolean;
           name: string;
@@ -251,16 +256,19 @@ function InnerAdminView({
         <Switch
           checkedChildren="Active"
           unCheckedChildren="Inactive"
+          title={record.treasury ? "Can't edit the treasury account" : undefined}
+          disabled={record.treasury}
           checked={value}
-          onChange={val =>
+          onChange={val => {
+            if (!record.treasury)
             setUpdatedCreators(u => ({
               ...u,
               [record.key]: new WhitelistedCreator({
                 activated: val,
                 address: record.address,
               }),
-            }))
-          }
+              }));
+          }}
         />
       ),
     },
@@ -281,6 +289,14 @@ function InnerAdminView({
                   message: 'Saving...',
                   type: 'info',
                 });
+                if (hasTreasury && treasuryInfo) {
+                  updatedCreators[treasuryInfo.pubkey] = new WhitelistedCreator(
+                    {
+                      activated: true,
+                      address: treasuryInfo.pubkey,
+                    },
+                  );
+                }
                 await saveAdmin(
                   connection,
                   wallet,
@@ -318,6 +334,7 @@ function InnerAdminView({
             columns={columns}
             dataSource={Object.keys(uniqueCreatorsWithUpdates).map(key => ({
               key,
+              treasury: hasTreasury && key === treasuryInfo?.pubkey,
               address: uniqueCreatorsWithUpdates[key].address,
               activated: uniqueCreatorsWithUpdates[key].activated,
               name:
