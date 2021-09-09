@@ -32,10 +32,11 @@ import {
   MetaplexOverlay,
   MetadataFile,
   StringPublicKey,
+  programIds,
 } from '@oyster/common';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { getAssetCostToStore, LAMPORT_MULTIPLIER } from '../../utils/assets';
-import { Connection } from '@solana/web3.js';
+import { Connection, PublicKey } from '@solana/web3.js';
 import { MintLayout } from '@solana/spl-token';
 import { useHistory, useParams } from 'react-router-dom';
 import { cleanName, getLast } from '../../utils/utils';
@@ -44,6 +45,7 @@ import useWindowDimensions from '../../utils/layout';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { useMeta } from '../../contexts';
 import {
+  approveNFT,
   TreasuryInfo,
   useHasTreasury,
   useTreasuryInfo,
@@ -55,7 +57,7 @@ const { Text } = Typography;
 
 export const ArtCreateView = () => {
   const connection = useConnection();
-  const { env } = useConnectionConfig();
+  const { env, endpoint } = useConnectionConfig();
   const wallet = useWallet();
   const { step_param }: { step_param: string } = useParams();
   const history = useHistory();
@@ -141,7 +143,25 @@ export const ArtCreateView = () => {
       metadata,
       attributes.properties?.maxSupply,
     );
-    if (_nft) setNft(_nft);
+
+    if (_nft) {
+      if (hasTreasury && treasuryInfo) {
+        try {
+          await approveNFT({
+            endpoint: treasuryInfo?.approve,
+            solanaEndpoint: endpoint,
+            metadata: new PublicKey(_nft.metadataAccount),
+            metaProgramId: new PublicKey(programIds().metadata),
+          })
+        } catch (e) {
+          console.error(e);
+          // TODO: warning
+        }
+      }
+
+      setNft(_nft);
+    }
+
     clearInterval(inte);
   };
 

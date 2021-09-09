@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { ReactChild, useMemo, useState } from 'react';
 import {
   Row,
   Col,
@@ -9,24 +9,43 @@ import {
   Skeleton,
   List,
   Card,
+  TagProps,
+  Typography,
 } from 'antd';
 import { useParams } from 'react-router-dom';
 import { useArt, useExtendedArt } from '../../hooks';
 
 import { ArtContent } from '../../components/ArtContent';
-import { shortenAddress, useConnection } from '@oyster/common';
+import {
+  programIds,
+  shortenAddress,
+  useConnection,
+  useConnectionConfig,
+} from '@oyster/common';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { MetaAvatar } from '../../components/MetaAvatar';
 import { sendSignMetadata } from '../../actions/sendSignMetadata';
 import { ViewOn } from '../../components/ViewOn';
 import { ArtType } from '../../types';
 import { ArtMinting } from '../../components/ArtMinting';
+import {
+  useApproveNFT,
+  useHasTreasury,
+  useTreasuryInfo,
+} from '../../utils/treasury';
+import { useMeta } from '../../contexts';
+import { PublicKey } from '@solana/web3.js';
 
 const { Content } = Layout;
 
 export const ArtView = () => {
+  const { whitelistedCreatorsByCreator } = useMeta();
+  const { endpoint } = useConnectionConfig();
   const { id } = useParams<{ id: string }>();
   const wallet = useWallet();
+  const treasuryInfo = useTreasuryInfo();
+  const hasTreasury = useHasTreasury(whitelistedCreatorsByCreator);
+  const { status: treasuryApproveStatus, approveNFT } = useApproveNFT();
   const [remountArtMinting, setRemountArtMinting] = useState(0);
 
   const connection = useConnection();
@@ -59,6 +78,81 @@ export const ArtView = () => {
     </div>
   );
 
+  const isCreator = art.creators?.some(c => c.address === pubkey) ?? false;
+  const shouldVerifyTreasury =
+    isCreator &&
+    !(art.creators?.find(c => c.address === treasuryInfo?.pubkey)?.verified ??
+      true);
+
+  // NOTE: this is debounced by useApproveNFT
+  if (hasTreasury && treasuryInfo && shouldVerifyTreasury) {
+    approveNFT({
+      endpoint: treasuryInfo.approve,
+      solanaEndpoint: endpoint,
+      metadata: new PublicKey(id),
+      metaProgramId: new PublicKey(programIds().metadata),
+    });
+  }
+
+  const treasuryStatus = useMemo<
+    undefined | 'APPROVING' | 'APPROVAL ERROR' | 'TREASURY'
+  >(() => {
+    if (!hasTreasury) return undefined;
+    if (!shouldVerifyTreasury) return 'TREASURY';
+
+    switch (treasuryApproveStatus) {
+      case undefined:
+      case 'approving':
+        return 'APPROVING';
+      case 'approved':
+        return 'TREASURY';
+      case 'failed':
+        return 'APPROVAL ERROR';
+    }
+  }, [hasTreasury, treasuryInfo, shouldVerifyTreasury, treasuryApproveStatus]);
+
+  const treasuryTag = useMemo(() => {
+    let color: TagProps['color'];
+
+    switch (treasuryStatus) {
+      case undefined:
+        color = undefined;
+        break;
+      case 'APPROVAL ERROR':
+        color = 'red';
+        break;
+      default:
+        color = 'blue';
+        break;
+    }
+
+    return (
+      <div className="info-header">
+        <Tag color={color}>{treasuryStatus}</Tag>
+      </div>
+    );
+  }, [treasuryStatus]);
+
+  let treasuryUnverified: ReactChild | undefined;
+
+  switch (treasuryStatus) {
+    case undefined:
+    case 'TREASURY':
+      break;
+    case 'APPROVING':
+      treasuryUnverified = (
+        <i>Approval requested from the Holaplex treasury account...</i>
+      );
+      break;
+    case 'APPROVAL ERROR':
+      treasuryUnverified = (
+        <Typography.Text type="danger">
+          Holaplex approval request failed, reload to try again.
+        </Typography.Text>
+      );
+      break;
+  }
+
   const unverified = (
     <>
       {tag}
@@ -69,6 +163,12 @@ export const ArtView = () => {
           can be considered verified and sellable on the platform.
         </i>
       </div>
+      {treasuryUnverified && (
+        <>
+          <br />
+          <div style={{ fontSize: 12 }}>{treasuryUnverified}</div>
+        </>
+      )}
       <br />
     </>
   );
@@ -129,7 +229,9 @@ export const ArtView = () => {
                               shortenAddress(creator.address || '')}
                           </span>
                           <div style={{ marginLeft: 10 }}>
-                            {!creator.verified &&
+                            {(!creator.verified ||
+                              (creator.address === treasuryInfo?.pubkey &&
+                                treasuryStatus)) &&
                               (creator.address === pubkey ? (
                                 <Button
                                   onClick={async () => {
@@ -148,6 +250,9 @@ export const ArtView = () => {
                                 >
                                   Approve
                                 </Button>
+                              ) : hasTreasury &&
+                                creator.address === treasuryInfo?.pubkey ? (
+                                treasuryTag
                               ) : (
                                 tag
                               ))}
