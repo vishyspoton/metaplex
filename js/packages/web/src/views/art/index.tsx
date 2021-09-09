@@ -79,10 +79,13 @@ export const ArtView = () => {
   );
 
   const isCreator = art.creators?.some(c => c.address === pubkey) ?? false;
+  const treasuryCreator = art.creators?.find(
+    c => c.address === treasuryInfo?.pubkey,
+  );
   const shouldVerifyTreasury =
     isCreator &&
-    !(art.creators?.find(c => c.address === treasuryInfo?.pubkey)?.verified ??
-      true);
+    treasuryCreator !== undefined &&
+    !(treasuryCreator?.verified ?? true);
 
   // NOTE: this is debounced by useApproveNFT
   if (hasTreasury && treasuryInfo && shouldVerifyTreasury) {
@@ -95,7 +98,7 @@ export const ArtView = () => {
   }
 
   const treasuryStatus = useMemo<
-    undefined | 'APPROVING' | 'APPROVAL ERROR' | 'TREASURY'
+    undefined | 'APPROVING' | 'APPROVAL ERROR' | 'APPROVED' | 'TREASURY'
   >(() => {
     if (!hasTreasury) return undefined;
     if (!shouldVerifyTreasury) return 'TREASURY';
@@ -105,7 +108,7 @@ export const ArtView = () => {
       case 'approving':
         return 'APPROVING';
       case 'approved':
-        return 'TREASURY';
+        return 'APPROVED';
       case 'failed':
         return 'APPROVAL ERROR';
     }
@@ -117,6 +120,9 @@ export const ArtView = () => {
     switch (treasuryStatus) {
       case undefined:
         color = undefined;
+        break;
+      case 'APPROVED':
+        color = 'green';
         break;
       case 'APPROVAL ERROR':
         color = 'red';
@@ -142,6 +148,13 @@ export const ArtView = () => {
     case 'APPROVING':
       treasuryUnverified = (
         <i>Approval requested from the Holaplex treasury account...</i>
+      );
+      break;
+    case 'APPROVED':
+      treasuryUnverified = (
+        <Typography.Text type="success">
+          Holaplex approval request succeeded, reload the page to refresh.
+        </Typography.Text>
       );
       break;
     case 'APPROVAL ERROR':

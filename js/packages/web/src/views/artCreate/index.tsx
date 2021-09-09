@@ -33,6 +33,7 @@ import {
   MetadataFile,
   StringPublicKey,
   programIds,
+  notify,
 } from '@oyster/common';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { getAssetCostToStore, LAMPORT_MULTIPLIER } from '../../utils/assets';
@@ -155,7 +156,12 @@ export const ArtCreateView = () => {
           })
         } catch (e) {
           console.error(e);
-          // TODO: warning
+
+          notify({
+            message: 'Treasury approval failed',
+            description: 'Open this item in your collection to try again',
+            type: 'warning',
+          })
         }
       }
 
