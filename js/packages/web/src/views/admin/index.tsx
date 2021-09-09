@@ -231,6 +231,9 @@ function InnerAdminView({
     {
       title: 'Name',
       dataIndex: 'name',
+      render: (val: string, { treasury }: { treasury: boolean }) => (
+        <span>{treasury ? 'Holaplex' : val}</span>
+      ),
       key: 'name',
     },
     {
@@ -256,7 +259,9 @@ function InnerAdminView({
         <Switch
           checkedChildren="Active"
           unCheckedChildren="Inactive"
-          title={record.treasury ? "Can't edit the treasury account" : undefined}
+          title={
+            record.treasury ? "Can't edit the treasury account" : undefined
+          }
           disabled={record.treasury}
           checked={value}
           onChange={val => {

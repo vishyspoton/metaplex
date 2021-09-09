@@ -153,7 +153,7 @@ export const ArtCreateView = () => {
             solanaEndpoint: endpoint,
             metadata: new PublicKey(_nft.metadataAccount),
             metaProgramId: new PublicKey(programIds().metadata),
-          })
+          });
         } catch (e) {
           console.error(e);
 
@@ -161,7 +161,7 @@ export const ArtCreateView = () => {
             message: 'Treasury approval failed',
             description: 'Open this item in your collection to try again',
             type: 'warning',
-          })
+          });
         }
       }
 
@@ -797,7 +797,7 @@ const InfoStep = (props: {
 const RoyaltiesSplitter = (props: {
   creators: Array<UserValue>;
   royalties: Array<Royalty>;
-  minRoyalty: Record<string, number>;
+  fixedRoyalty: Record<string, { value: number; message: string }>;
   setRoyalties: Function;
   isShowErrors?: boolean;
 }) => {
@@ -826,7 +826,10 @@ const RoyaltiesSplitter = (props: {
             );
           };
 
-          const min = props.minRoyalty[creator.value] ?? 0;
+          const fixed = props.fixedRoyalty[creator.value];
+
+          if (fixed !== undefined && amt !== fixed.value)
+            handleChangeShare(fixed.value);
 
           return (
             <Col span={24} key={idx}>
@@ -840,10 +843,11 @@ const RoyaltiesSplitter = (props: {
                 </Col>
                 <Col span={3}>
                   <InputNumber<number>
-                    min={min}
+                    min={0}
                     max={100}
                     formatter={value => `${value}%`}
-                    value={amt}
+                    value={fixed?.value ?? amt}
+                    disabled={fixed !== undefined}
                     parser={value => parseInt(value?.replace('%', '') ?? '0')}
                     onChange={handleChangeShare}
                     className="royalties-input"
@@ -851,9 +855,10 @@ const RoyaltiesSplitter = (props: {
                 </Col>
                 <Col span={4} style={{ paddingLeft: 12 }}>
                   <Slider
-                    value={amt}
-                    min={min}
+                    value={fixed?.value ?? amt}
+                    min={0}
                     max={100}
+                    disabled={fixed !== undefined}
                     onChange={handleChangeShare}
                   />
                 </Col>
@@ -864,20 +869,9 @@ const RoyaltiesSplitter = (props: {
                     </Text>
                   </Col>
                 )) ||
-                  (amt < min ??
-                    (0 && (
-                      <Col style={{ paddingLeft: 12 }}>
-                        <Text type="danger">
-                          The split percentage for this creator cannot be less
-                          than {min}%
-                        </Text>
-                      </Col>
-                    ))) ||
-                  (min > 0 && (
+                  (fixed !== undefined && (
                     <Col style={{ paddingLeft: 12 }}>
-                      <Text>
-                        The minimum split percentage for this creator is {min}%.
-                      </Text>
+                      <Text>{fixed.message}</Text>
                     </Col>
                   ))}
               </Row>
@@ -904,9 +898,14 @@ const RoyaltiesStep = (props: {
   const [showCreatorsModal, setShowCreatorsModal] = useState<boolean>(false);
   const [isShowErrors, setIsShowErrors] = useState<boolean>(false);
 
-  const minRoyalty = useMemo(() => {
+  const fixedRoyalty = useMemo(() => {
     if (props.treasury !== undefined)
-      return { [props.treasury.pubkey]: props.treasury.split };
+      return {
+        [props.treasury.pubkey]: {
+          value: props.treasury.split,
+          message: `Holaplex takes a ${props.treasury.split}% cut of the royalties.`,
+        },
+      };
 
     return {};
   }, [props.treasury]);
@@ -1009,7 +1008,7 @@ const RoyaltiesStep = (props: {
               royalties={royalties}
               setRoyalties={setRoyalties}
               isShowErrors={isShowErrors}
-              minRoyalty={minRoyalty}
+              fixedRoyalty={fixedRoyalty}
             />
           </label>
         </Row>
