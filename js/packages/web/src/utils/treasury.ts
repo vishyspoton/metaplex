@@ -90,6 +90,7 @@ export const approveNFT = async ({
     const resp = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      mode: 'cors',
       body: JSON.stringify({
         solanaEndpoint,
         metadata: metadata.toBase58(),
@@ -107,7 +108,7 @@ export const approveNFT = async ({
       }
 
       throw new Error(
-        `Store upload failed: ${json.message ?? JSON.stringify(json)}`,
+        `NFT approval failed: ${json.message ?? JSON.stringify(json)}`,
       );
     }
 
