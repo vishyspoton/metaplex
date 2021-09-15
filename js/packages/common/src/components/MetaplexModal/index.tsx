@@ -9,11 +9,11 @@ export const MetaplexModal = (props: any) => {
       bodyStyle={{
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
+
         ...bodyStyle,
       }}
       footer={null}
-      width={400}
+      width={500}
       {...rest}
     >
       {children}
