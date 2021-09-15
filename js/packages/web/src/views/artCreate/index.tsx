@@ -46,11 +46,11 @@ import useWindowDimensions from '../../utils/layout';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { useMeta } from '../../contexts';
 import {
-  approveNFT,
-  TreasuryInfo,
-  useHasTreasury,
-  useTreasuryInfo,
-} from '../../utils/treasury';
+  holaSignMetadata,
+  HolderInfo,
+  useHasHolder,
+  useHolderInfo,
+} from '../../utils/holder';
 
 const { Step } = Steps;
 const { Dragger } = Upload;
@@ -87,10 +87,10 @@ export const ArtCreateView = () => {
     },
   });
 
-  const hasTreasury = useHasTreasury(whitelistedCreatorsByCreator);
-  let treasuryInfo = useTreasuryInfo();
+  const hasHolder = useHasHolder(whitelistedCreatorsByCreator);
+  let holderInfo = useHolderInfo();
 
-  if (!hasTreasury) treasuryInfo = undefined;
+  if (!hasHolder) holderInfo = undefined;
 
   const gotoStep = useCallback(
     (_step: number) => {
@@ -107,12 +107,12 @@ export const ArtCreateView = () => {
 
   // store files
   const mint = async () => {
-    if (hasTreasury && treasuryInfo) {
+    if (hasHolder && holderInfo) {
       const share = attributes.creators?.find(
-        c => c.address === treasuryInfo?.pubkey,
+        c => c.address === holderInfo?.pubkey,
       )?.share;
 
-      if (share === undefined || share < treasuryInfo.split) gotoStep(3);
+      if (share === undefined || share < holderInfo.split) gotoStep(3);
     }
 
     const metadata = {
@@ -146,10 +146,10 @@ export const ArtCreateView = () => {
     );
 
     if (_nft) {
-      if (hasTreasury && treasuryInfo) {
+      if (hasHolder && holderInfo) {
         try {
-          await approveNFT({
-            endpoint: treasuryInfo?.approve,
+          await holaSignMetadata({
+            endpoint: holderInfo?.signMeta,
             solanaEndpoint: endpoint,
             metadata: new PublicKey(_nft.metadataAccount),
             metaProgramId: new PublicKey(programIds().metadata),
@@ -158,7 +158,7 @@ export const ArtCreateView = () => {
           console.error(e);
 
           notify({
-            message: 'Treasury approval failed',
+            message: 'Finalizing with Holaplex failed',
             description: 'Open this item in your collection to try again',
             type: 'warning',
           });
@@ -233,7 +233,7 @@ export const ArtCreateView = () => {
               attributes={attributes}
               confirm={() => gotoStep(4)}
               setAttributes={setAttributes}
-              treasury={treasuryInfo}
+              holder={holderInfo}
             />
           )}
           {step === 4 && (
@@ -886,7 +886,7 @@ const RoyaltiesSplitter = (props: {
 const RoyaltiesStep = (props: {
   attributes: IMetadataExtension;
   setAttributes: (attr: IMetadataExtension) => void;
-  treasury: TreasuryInfo | undefined;
+  holder: HolderInfo | undefined;
   confirm: () => void;
 }) => {
   // const file = props.attributes.image;
@@ -899,29 +899,29 @@ const RoyaltiesStep = (props: {
   const [isShowErrors, setIsShowErrors] = useState<boolean>(false);
 
   const fixedRoyalty = useMemo(() => {
-    if (props.treasury !== undefined)
+    if (props.holder !== undefined)
       return {
-        [props.treasury.pubkey]: {
-          value: props.treasury.split,
-          message: `Holaplex takes a ${props.treasury.split}% cut of the royalties.`,
+        [props.holder.pubkey]: {
+          value: props.holder.split,
+          message: `${props.holder.split}% of the proceeds go to supporting Holaplex.`,
         },
       };
 
     return {};
-  }, [props.treasury]);
+  }, [props.holder]);
 
   useEffect(() => {
     if (publicKey) {
       const key = publicKey.toBase58();
-      const treasuryKey = props.treasury?.pubkey;
-      const treasuryCreators =
-        treasuryKey === undefined
+      const holderKey = props.holder?.pubkey;
+      const holderCreators =
+        holderKey === undefined
           ? []
           : [
               {
-                key: treasuryKey,
-                label: shortenAddress(treasuryKey),
-                value: treasuryKey,
+                key: holderKey,
+                label: 'Holaplex',
+                value: holderKey,
               },
             ];
 
@@ -931,26 +931,26 @@ const RoyaltiesStep = (props: {
           label: shortenAddress(key),
           value: key,
         },
-        ...treasuryCreators,
+        ...holderCreators,
       ]);
     }
   }, [connected, setCreators]);
 
   useEffect(() => {
-    // Don't automatically allocate the treasury more than the minimum split
-    const split = props.treasury?.split ?? 0;
+    // Don't automatically allocate the Holaplex holder more than the expected split
+    const split = props.holder?.split ?? 0;
 
     const amt = Math.trunc(
       (100 - split) /
         [...fixedCreators, ...creators].filter(
-          c => c.value === props.treasury?.pubkey,
+          c => c.value !== props.holder?.pubkey,
         ).length,
     );
 
     setRoyalties(
       [...fixedCreators, ...creators].map(creator => ({
         creatorKey: creator.key,
-        amount: creator.value === props.treasury?.pubkey ? split : amt,
+        amount: creator.value === props.holder?.pubkey ? split : amt,
       })),
     );
   }, [creators, fixedCreators]);

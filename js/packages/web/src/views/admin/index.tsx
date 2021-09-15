@@ -37,7 +37,7 @@ import {
 } from '../../actions/convertMasterEditions';
 import { Link } from 'react-router-dom';
 import { SetupVariables } from '../../components/SetupVariables';
-import { useHasTreasury, useTreasuryInfo } from '../../utils/treasury';
+import { useHasHolder, useHolderInfo } from '../../utils/holder';
 
 const { Content } = Layout;
 export const AdminView = () => {
@@ -214,8 +214,8 @@ function InnerAdminView({
     fn();
   }, [connected]);
 
-  const treasuryInfo = useTreasuryInfo();
-  const hasTreasury = useHasTreasury(whitelistedCreatorsByCreator);
+  const holderInfo = useHolderInfo();
+  const hasHolder = useHasHolder(whitelistedCreatorsByCreator);
 
   const uniqueCreators = Object.values(whitelistedCreatorsByCreator).reduce(
     (acc: Record<string, WhitelistedCreator>, e) => {
@@ -231,8 +231,8 @@ function InnerAdminView({
     {
       title: 'Name',
       dataIndex: 'name',
-      render: (val: string, { treasury }: { treasury: boolean }) => (
-        <span>{treasury ? 'Holaplex' : val}</span>
+      render: (val: string, { holder }: { holder: boolean }) => (
+        <span>{holder ? 'Holaplex' : val}</span>
       ),
       key: 'name',
     },
@@ -249,7 +249,7 @@ function InnerAdminView({
       render: (
         value: boolean,
         record: {
-          treasury: boolean;
+          holder: boolean;
           address: StringPublicKey;
           activated: boolean;
           name: string;
@@ -259,19 +259,17 @@ function InnerAdminView({
         <Switch
           checkedChildren="Active"
           unCheckedChildren="Inactive"
-          title={
-            record.treasury ? "Can't edit the treasury account" : undefined
-          }
-          disabled={record.treasury}
+          title={record.holder ? "Can't deactivate Holaplex" : undefined}
+          disabled={record.holder}
           checked={value}
           onChange={val => {
-            if (!record.treasury)
-            setUpdatedCreators(u => ({
-              ...u,
-              [record.key]: new WhitelistedCreator({
-                activated: val,
-                address: record.address,
-              }),
+            if (!record.holder)
+              setUpdatedCreators(u => ({
+                ...u,
+                [record.key]: new WhitelistedCreator({
+                  activated: val,
+                  address: record.address,
+                }),
               }));
           }}
         />
@@ -294,11 +292,11 @@ function InnerAdminView({
                   message: 'Saving...',
                   type: 'info',
                 });
-                if (hasTreasury && treasuryInfo) {
-                  updatedCreators[treasuryInfo.pubkey] = new WhitelistedCreator(
+                if (hasHolder && holderInfo) {
+                  updatedCreators[holderInfo.pubkey] = new WhitelistedCreator(
                     {
                       activated: true,
-                      address: treasuryInfo.pubkey,
+                      address: holderInfo.pubkey,
                     },
                   );
                 }
@@ -339,7 +337,7 @@ function InnerAdminView({
             columns={columns}
             dataSource={Object.keys(uniqueCreatorsWithUpdates).map(key => ({
               key,
-              treasury: hasTreasury && key === treasuryInfo?.pubkey,
+              holder: hasHolder && key === holderInfo?.pubkey,
               address: uniqueCreatorsWithUpdates[key].address,
               activated: uniqueCreatorsWithUpdates[key].activated,
               name:

@@ -3,48 +3,50 @@ import { PublicKey } from '@solana/web3.js';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { WhitelistedCreator } from '../models/metaplex';
 
-export interface TreasuryInfo {
+export interface HolderInfo {
   pubkey: string;
   split: number;
-  approve: string;
+  signMeta: string;
 }
 
-export const getTreasuryInfo = (): TreasuryInfo | undefined => {
-  const TREASURY_PUBKEY = process.env.NEXT_PUBLIC_HOLAPLEX_TREASURY_PUBKEY;
-  const TREASURY_SPLIT = process.env.NEXT_PUBLIC_HOLAPLEX_TREASURY_SPLIT;
-  const APPROVE_ENDPOINT =
-    process.env.NEXT_PUBLIC_HOLAPLEX_TREASURY_APPROVE_ENDPOINT;
+export const getHolderInfo = (): HolderInfo | undefined => {
+  const HOLDER_PUBKEY = process.env.NEXT_PUBLIC_HOLAPLEX_HOLDER_PUBKEY;
+  const HOLDER_SPLIT = process.env.NEXT_PUBLIC_HOLAPLEX_HOLDER_SPLIT;
+  const SIGN_META_URL =
+    process.env.NEXT_PUBLIC_HOLAPLEX_HOLDER_SIGN_META_URL;
 
-  if (!(TREASURY_PUBKEY && TREASURY_SPLIT && APPROVE_ENDPOINT)) {
-    if (TREASURY_PUBKEY || TREASURY_SPLIT || APPROVE_ENDPOINT)
-      console.error('Incorrect treasury configuration - missing an env var');
+  if (!(HOLDER_PUBKEY && HOLDER_SPLIT && SIGN_META_URL)) {
+    if (HOLDER_PUBKEY || HOLDER_SPLIT || SIGN_META_URL)
+      console.error(
+        'Incorrect Holaplex holder configuration - missing an env var',
+      );
 
     return undefined;
   }
 
   try {
     return {
-      pubkey: TREASURY_PUBKEY,
-      split: parseInt(TREASURY_SPLIT),
-      approve: APPROVE_ENDPOINT,
+      pubkey: HOLDER_PUBKEY,
+      split: parseInt(HOLDER_SPLIT),
+      signMeta: SIGN_META_URL,
     };
   } catch (e) {
-    console.error('Incorrect treasury configuration', e);
+    console.error('Incorrect Holaplex holder configuration', e);
 
     return undefined;
   }
 };
 
-export const useTreasuryInfo = (): TreasuryInfo | undefined =>
-  useMemo(getTreasuryInfo, []);
+export const useHolderInfo = (): HolderInfo | undefined =>
+  useMemo(getHolderInfo, []);
 
-export const hasTreasury = (
+export const hasHolder = (
   whitelistedCreatorsByCreator: Record<
     string,
     ParsedAccount<WhitelistedCreator>
   >,
 ): boolean => {
-  const info = getTreasuryInfo();
+  const info = getHolderInfo();
   if (!info) return false;
 
   const creator = whitelistedCreatorsByCreator[info.pubkey];
@@ -54,18 +56,18 @@ export const hasTreasury = (
   return !!creator.info.activated;
 };
 
-export const useHasTreasury = (
+export const useHasHolder = (
   whitelistedCreatorsByCreator: Record<
     string,
     ParsedAccount<WhitelistedCreator>
   >,
 ): boolean =>
   useMemo(
-    () => hasTreasury(whitelistedCreatorsByCreator),
+    () => hasHolder(whitelistedCreatorsByCreator),
     [whitelistedCreatorsByCreator],
   );
 
-export const approveNFT = async ({
+export const holaSignMetadata = async ({
   endpoint,
   solanaEndpoint,
   metadata,
@@ -78,14 +80,14 @@ export const approveNFT = async ({
   solanaEndpoint: string;
   metadata: PublicKey;
   metaProgramId: PublicKey;
-  onProgress?: (status: 'approving' | 'approved' | 'failed') => void;
+  onProgress?: (status: 'signing' | 'signed' | 'failed') => void;
   onComplete?: () => void;
   onError?: (msg: string) => void;
 }) => {
   try {
     if (!onProgress) onProgress = () => {};
 
-    onProgress('approving');
+    onProgress('signing');
 
     const resp = await fetch(endpoint, {
       method: 'POST',
@@ -112,7 +114,7 @@ export const approveNFT = async ({
       );
     }
 
-    onProgress('approved');
+    onProgress('signed');
 
     if (onComplete) onComplete();
   } catch (e) {
@@ -123,9 +125,9 @@ export const approveNFT = async ({
   }
 };
 
-export const useApproveNFT = (): {
-  status: undefined | 'approving' | 'approved' | 'failed';
-  approveNFT: (params: {
+export const useHolaSignMetadata = (): {
+  status: undefined | 'signing' | 'signed' | 'failed';
+  holaSignMetadata: (params: {
     endpoint: string;
     solanaEndpoint: string;
     metadata: PublicKey;
@@ -136,15 +138,15 @@ export const useApproveNFT = (): {
 
   // NOTE: this dual-hook thing is due to a bug where useState kept losing its value
   const status =
-    useRef<undefined | 'approving' | 'approved' | 'failed'>(undefined);
+    useRef<undefined | 'signing' | 'signed' | 'failed'>(undefined);
   const rerender = useState<{}>({})[1];
 
   return {
     status: status.current,
-    approveNFT: useCallback(params => {
+    holaSignMetadata: useCallback(params => {
       if (promiseRef.current !== undefined) return;
 
-      promiseRef.current = approveNFT({
+      promiseRef.current = holaSignMetadata({
         ...params,
         onProgress: s => {
           status.current = s;

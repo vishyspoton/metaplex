@@ -1,4 +1,4 @@
-import React, { ReactChild, useMemo, useState } from 'react';
+import React, { ReactNode, useMemo, useState } from 'react';
 import {
   Row,
   Col,
@@ -29,10 +29,10 @@ import { ViewOn } from '../../components/ViewOn';
 import { ArtType } from '../../types';
 import { ArtMinting } from '../../components/ArtMinting';
 import {
-  useApproveNFT,
-  useHasTreasury,
-  useTreasuryInfo,
-} from '../../utils/treasury';
+  useHolaSignMetadata,
+  useHasHolder,
+  useHolderInfo,
+} from '../../utils/holder';
 import { useMeta } from '../../contexts';
 import { PublicKey } from '@solana/web3.js';
 
@@ -43,9 +43,9 @@ export const ArtView = () => {
   const { endpoint } = useConnectionConfig();
   const { id } = useParams<{ id: string }>();
   const wallet = useWallet();
-  const treasuryInfo = useTreasuryInfo();
-  const hasTreasury = useHasTreasury(whitelistedCreatorsByCreator);
-  const { status: treasuryApproveStatus, approveNFT } = useApproveNFT();
+  const holderInfo = useHolderInfo();
+  const hasHolder = useHasHolder(whitelistedCreatorsByCreator);
+  const { status: signMetaStatus, holaSignMetadata } = useHolaSignMetadata();
   const [remountArtMinting, setRemountArtMinting] = useState(0);
 
   const connection = useConnection();
@@ -79,89 +79,82 @@ export const ArtView = () => {
   );
 
   const isCreator = art.creators?.some(c => c.address === pubkey) ?? false;
-  const treasuryCreator = art.creators?.find(
-    c => c.address === treasuryInfo?.pubkey,
+  const holderCreator = art.creators?.find(
+    c => c.address === holderInfo?.pubkey,
   );
-  const shouldVerifyTreasury =
+  const shouldVerifyHolder =
     isCreator &&
-    treasuryCreator !== undefined &&
-    !(treasuryCreator?.verified ?? true);
+    holderCreator !== undefined &&
+    !(holderCreator?.verified ?? true);
 
-  // NOTE: this is debounced by useApproveNFT
-  if (hasTreasury && treasuryInfo && shouldVerifyTreasury) {
-    approveNFT({
-      endpoint: treasuryInfo.approve,
+  // NOTE: this is debounced by useHolaSignMetadata
+  if (hasHolder && holderInfo && shouldVerifyHolder) {
+    holaSignMetadata({
+      endpoint: holderInfo.signMeta,
       solanaEndpoint: endpoint,
       metadata: new PublicKey(id),
       metaProgramId: new PublicKey(programIds().metadata),
     });
   }
 
-  const treasuryStatus = useMemo<
-    undefined | 'APPROVING' | 'APPROVAL ERROR' | 'APPROVED' | 'TREASURY'
+  const holderStatus = useMemo<
+    undefined | 'FINALIZING' | 'FINALIZED' | 'HOLAPLEX ERROR'
   >(() => {
-    if (!hasTreasury) return undefined;
-    if (!shouldVerifyTreasury) return 'TREASURY';
+    if (!(hasHolder && shouldVerifyHolder)) return undefined;
 
-    switch (treasuryApproveStatus) {
+    switch (signMetaStatus) {
       case undefined:
-      case 'approving':
-        return 'APPROVING';
-      case 'approved':
-        return 'APPROVED';
+      case 'signing':
+        return 'FINALIZING';
+      case 'signed':
+        return 'FINALIZED';
       case 'failed':
-        return 'APPROVAL ERROR';
+        return 'HOLAPLEX ERROR';
     }
-  }, [hasTreasury, treasuryInfo, shouldVerifyTreasury, treasuryApproveStatus]);
+  }, [hasHolder, holderInfo, shouldVerifyHolder, signMetaStatus]);
 
-  const treasuryTag = useMemo(() => {
+  const holderTag = useMemo(() => {
     let color: TagProps['color'];
 
-    switch (treasuryStatus) {
+    switch (holderStatus) {
       case undefined:
         color = undefined;
         break;
-      case 'APPROVED':
+      case 'FINALIZING':
+        color = 'blue';
+        break;
+      case 'FINALIZED':
         color = 'green';
         break;
-      case 'APPROVAL ERROR':
+      case 'HOLAPLEX ERROR':
         color = 'red';
-        break;
-      default:
-        color = 'blue';
         break;
     }
 
     return (
       <div className="info-header">
-        <Tag color={color}>{treasuryStatus}</Tag>
+        <Tag color={color}>{holderStatus}</Tag>
       </div>
     );
-  }, [treasuryStatus]);
+  }, [holderStatus]);
 
-  let treasuryUnverified: ReactChild | undefined;
+  let holderUnverified: ReactNode;
 
-  switch (treasuryStatus) {
+  switch (holderStatus) {
     case undefined:
-    case 'TREASURY':
       break;
-    case 'APPROVING':
-      treasuryUnverified = (
-        <i>Approval requested from the Holaplex treasury account...</i>
-      );
+    case 'FINALIZING':
+      holderUnverified = 'Finalizing with Holaplex...';
       break;
-    case 'APPROVED':
-      treasuryUnverified = (
-        <Typography.Text type="success">
-          Holaplex approval request succeeded, reload the page to refresh.
-        </Typography.Text>
-      );
+    case 'FINALIZED':
+      holderUnverified = 'Finalized! Reload the page to continue.';
       break;
-    case 'APPROVAL ERROR':
-      treasuryUnverified = (
-        <Typography.Text type="danger">
-          Holaplex approval request failed, reload to try again.
-        </Typography.Text>
+    case 'HOLAPLEX ERROR':
+      holderUnverified = (
+        <>
+          Finalization failed, reload to try again. If that doesn't work please{' '}
+          <a href="https://discord.com/invite/TEu7Qx5ux3">reach out for support</a>.
+        </>
       );
       break;
   }
@@ -176,10 +169,13 @@ export const ArtView = () => {
           can be considered verified and sellable on the platform.
         </i>
       </div>
-      {treasuryUnverified && (
+      {holderUnverified && (
         <>
           <br />
-          <div style={{ fontSize: 12 }}>{treasuryUnverified}</div>
+          {holderTag}
+          <div style={{ fontSize: 12 }}>
+            <i>{holderUnverified}</i>
+          </div>
         </>
       )}
       <br />
@@ -225,55 +221,54 @@ export const ArtView = () => {
               <Col>
                 <h6 style={{ marginTop: 5 }}>Created By</h6>
                 <div className="creators">
-                  {(art.creators || []).map((creator, idx) => {
-                    return (
-                      <div
-                        key={idx}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          marginBottom: 5,
-                        }}
-                      >
-                        <MetaAvatar creators={[creator]} size={64} />
-                        <div>
-                          <span className="creator-name">
-                            {creator.name ||
-                              shortenAddress(creator.address || '')}
-                          </span>
-                          <div style={{ marginLeft: 10 }}>
-                            {(!creator.verified ||
-                              (creator.address === treasuryInfo?.pubkey &&
-                                treasuryStatus)) &&
-                              (creator.address === pubkey ? (
-                                <Button
-                                  onClick={async () => {
-                                    try {
-                                      await sendSignMetadata(
-                                        connection,
-                                        wallet,
-                                        id,
-                                      );
-                                    } catch (e) {
-                                      console.error(e);
-                                      return false;
-                                    }
-                                    return true;
-                                  }}
-                                >
-                                  Approve
-                                </Button>
-                              ) : hasTreasury &&
-                                creator.address === treasuryInfo?.pubkey ? (
-                                treasuryTag
-                              ) : (
-                                tag
-                              ))}
+                  {(art.creators || [])
+                    .filter(c => !hasHolder || c.address !== holderInfo?.pubkey)
+                    .map((creator, idx) => {
+                      return (
+                        <div
+                          key={idx}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            marginBottom: 5,
+                          }}
+                        >
+                          <MetaAvatar creators={[creator]} size={64} />
+                          <div>
+                            <span className="creator-name">
+                              {creator.name ||
+                                shortenAddress(creator.address || '')}
+                            </span>
+                            <div style={{ marginLeft: 10 }}>
+                              {(!creator.verified ||
+                                (creator.address === holderInfo?.pubkey &&
+                                  holderStatus)) &&
+                                (creator.address === pubkey ? (
+                                  <Button
+                                    onClick={async () => {
+                                      try {
+                                        await sendSignMetadata(
+                                          connection,
+                                          wallet,
+                                          id,
+                                        );
+                                      } catch (e) {
+                                        console.error(e);
+                                        return false;
+                                      }
+                                      return true;
+                                    }}
+                                  >
+                                    Approve
+                                  </Button>
+                                ) : (
+                                  tag
+                                ))}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               </Col>
             </Row>

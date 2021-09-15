@@ -11,7 +11,7 @@ import { useHistory } from 'react-router-dom';
 import { saveAdmin } from '../../actions/saveAdmin';
 import { useMeta } from '../../contexts';
 import { SetupVariables } from '../../components/SetupVariables';
-import { useTreasuryInfo } from '../../utils/treasury';
+import { useHolderInfo } from '../../utils/holder';
 
 export const SetupView = () => {
   const [isInitalizingStore, setIsInitalizingStore] = useState(false);
@@ -46,12 +46,12 @@ export const SetupView = () => {
 
     setIsInitalizingStore(true);
 
-    const treasuryInfo = useTreasuryInfo();
+    const holderInfo = useHolderInfo();
 
-    const treasuryCreators = treasuryInfo
+    const holderCreators = holderInfo
       ? [
           new WhitelistedCreator({
-            address: treasuryInfo.pubkey,
+            address: holderInfo.pubkey,
             activated: true,
           }),
         ]
@@ -62,7 +62,7 @@ export const SetupView = () => {
         address: wallet.publicKey.toBase58(),
         activated: true,
       }),
-      ...treasuryCreators,
+      ...holderCreators,
     ]);
 
     // TODO: process errors
