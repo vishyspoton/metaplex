@@ -5,7 +5,6 @@ import {
   WalletProvider,
 } from '@oyster/common';
 import { FC } from 'react';
-import { UseWalletProvider } from 'use-wallet';
 import { ConfettiProvider } from './components/Confetti';
 import { AppLayout } from './components/Layout';
 import { MetaProvider } from './contexts/meta';
@@ -20,7 +19,6 @@ export const Providers: FC<ProvidersProps> = ({ children, storeId }) => {
   return (
     <ConnectionProvider>
       <WalletProvider>
-        <UseWalletProvider chainId={5}>
           <AccountsProvider>
             <CoingeckoProvider>
               <StoreProvider
@@ -35,7 +33,6 @@ export const Providers: FC<ProvidersProps> = ({ children, storeId }) => {
               </StoreProvider>
             </CoingeckoProvider>
           </AccountsProvider>
-        </UseWalletProvider>
       </WalletProvider>
     </ConnectionProvider>
   );
