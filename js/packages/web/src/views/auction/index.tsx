@@ -34,7 +34,6 @@ import useWindowDimensions from '../../utils/layout';
 import { CheckOutlined } from '@ant-design/icons';
 import { useMemo } from 'react';
 import { ArtType } from '../../types';
-import { ClickToCopy  } from '../../components/ClickToCopy';
 
 export const AuctionItem = ({
   item,
@@ -332,19 +331,13 @@ const BidLine = (props: {
             address={bidder}
           />{' '}
           {bidderTwitterHandle ? (
-            <Row className="pubkey-row"> 
-              <a
-                target="_blank"
-                title={shortenAddress(bidder)}
-                href={`https://twitter.com/${bidderTwitterHandle}`}
-              >{`@${bidderTwitterHandle}`}</a>
-              <ClickToCopy className="copy-pubkey" copyText={bidder as string} />
-            </Row>
+            <a
+              target="_blank"
+              title={shortenAddress(bidder)}
+              href={`https://twitter.com/${bidderTwitterHandle}`}
+            >{`@${bidderTwitterHandle}`}</a>
           ) : (
-            <Row className="pubkey-row"> 
-              {shortenAddress(bidder)}
-              <ClickToCopy className="copy-pubkey" copyText={bidder as string} />
-            </Row>
+            shortenAddress(bidder)
           )}
           {isme && <span style={{ color: '#6479f6' }}>&nbsp;(you)</span>}
         </Row>
