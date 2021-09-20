@@ -90,7 +90,7 @@ export const ArtCreateView = () => {
   const hasHolder = useHasHolder(whitelistedCreatorsByCreator);
   let holderInfo = useHolderInfo();
 
-  if (!hasHolder) holderInfo = undefined;
+  if (!hasHolder || (holderInfo?.split ?? 0) <= 0) holderInfo = undefined;
 
   const gotoStep = useCallback(
     (_step: number) => {
