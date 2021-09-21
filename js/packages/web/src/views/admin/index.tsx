@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Layout,
   Row,
@@ -37,7 +43,7 @@ import {
 } from '../../actions/convertMasterEditions';
 import { Link } from 'react-router-dom';
 import { SetupVariables } from '../../components/SetupVariables';
-import { useHasHolder, useHolderInfo } from '../../utils/holder';
+import { HolderInfo, useHasHolder, useHolderInfo } from '../../utils/holder';
 
 const { Content } = Layout;
 export const AdminView = () => {
@@ -169,6 +175,81 @@ function ArtistModal({
   );
 }
 
+type ConfirmHolderFn = (change: {
+  uniqueCreators: Record<string, WhitelistedCreator>;
+  updatedCreators: Record<string, WhitelistedCreator>;
+}) => Promise<boolean>;
+
+function AddHolaplexModal({
+  holderInfo,
+  setUpdatedCreators,
+  confirmRef,
+}: {
+  holderInfo: HolderInfo;
+  setUpdatedCreators: React.Dispatch<
+    React.SetStateAction<Record<string, WhitelistedCreator>>
+  >;
+  confirmRef: (val: ConfirmHolderFn) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const promisesRef = useRef<Array<(ok: boolean) => void>>([]);
+
+  confirmRef(
+    useCallback<ConfirmHolderFn>(
+      async ({ uniqueCreators, updatedCreators }): Promise<boolean> => {
+        if (
+          !(
+            updatedCreators[holderInfo.pubkey]?.activated &&
+            !uniqueCreators[holderInfo.pubkey]?.activated
+          )
+        ) {
+          // Don't confirm if the change doesn't involve Holaplex
+          return true;
+        }
+
+        setIsOpen(true);
+        return await new Promise<boolean>(ok => promisesRef.current.push(ok));
+      },
+      [setIsOpen],
+    ),
+  );
+
+  return (
+    <>
+      <Modal
+        title="Hold up!"
+        visible={isOpen}
+        onOk={() => {
+          promisesRef.current.splice(0).forEach(p => p(true));
+          setIsOpen(false);
+        }}
+        onCancel={() => {
+          promisesRef.current.splice(0).forEach(p => p(false));
+          setIsOpen(false);
+        }}
+      >
+        You're about to add Holaplex as a co-creator on your storefront. This
+        will enable Holaplex to collect {holderInfo.split}% of all future
+        proceeds.
+      </Modal>
+      <Button
+        className="add-creator-button"
+        onClick={() => {
+          setUpdatedCreators(u => ({
+            ...u,
+            [holderInfo.pubkey]: new WhitelistedCreator({
+              activated: true,
+              address: holderInfo.pubkey,
+            }),
+          }));
+        }}
+      >
+        Add Holaplex
+      </Button>
+    </>
+  );
+}
+
 function InnerAdminView({
   store,
   whitelistedCreatorsByCreator,
@@ -216,6 +297,7 @@ function InnerAdminView({
 
   const holderInfo = useHolderInfo();
   const hasHolder = useHasHolder(whitelistedCreatorsByCreator);
+  const confirmHolder = useRef<ConfirmHolderFn | undefined>(undefined);
 
   const uniqueCreators = Object.values(whitelistedCreatorsByCreator).reduce(
     (acc: Record<string, WhitelistedCreator>, e) => {
@@ -231,8 +313,9 @@ function InnerAdminView({
     {
       title: 'Name',
       dataIndex: 'name',
-      render: (val: string, { holder }: { holder: boolean }) => (
-        <span>{holder ? 'Holaplex' : val}</span>
+      // TODO: Just name the account normally
+      render: (val: string, { key }: { key: string }) => (
+        <span>{key === holderInfo?.pubkey ? 'Holaplex' : val}</span>
       ),
       key: 'name',
     },
@@ -249,31 +332,34 @@ function InnerAdminView({
       render: (
         value: boolean,
         record: {
-          holder: boolean;
           address: StringPublicKey;
           activated: boolean;
           name: string;
           key: string;
         },
-      ) => (
-        <Switch
-          checkedChildren="Active"
-          unCheckedChildren="Inactive"
-          title={record.holder ? "Can't deactivate Holaplex" : undefined}
-          disabled={record.holder}
-          checked={value}
-          onChange={val => {
-            if (!record.holder)
-              setUpdatedCreators(u => ({
-                ...u,
-                [record.key]: new WhitelistedCreator({
-                  activated: val,
-                  address: record.address,
-                }),
-              }));
-          }}
-        />
-      ),
+      ) => {
+        const holder = hasHolder && record.key === holderInfo?.pubkey;
+
+        return (
+          <Switch
+            checkedChildren="Active"
+            unCheckedChildren="Inactive"
+            title={holder ? "Can't deactivate Holaplex" : undefined}
+            disabled={holder}
+            checked={value}
+            onChange={val => {
+              if (!holder)
+                setUpdatedCreators(u => ({
+                  ...u,
+                  [record.key]: new WhitelistedCreator({
+                    activated: val,
+                    address: record.address,
+                  }),
+                }));
+            }}
+          />
+        );
+      },
     },
   ];
 
@@ -286,19 +372,37 @@ function InnerAdminView({
               setUpdatedCreators={setUpdatedCreators}
               uniqueCreatorsWithUpdates={uniqueCreatorsWithUpdates}
             />
+            {holderInfo !== undefined && !hasHolder && (
+              <AddHolaplexModal
+                holderInfo={holderInfo}
+                setUpdatedCreators={setUpdatedCreators}
+                confirmRef={f => (confirmHolder.current = f)}
+              />
+            )}
             <Button
               onClick={async () => {
+                if (confirmHolder.current) {
+                  if (
+                    !(await confirmHolder.current({
+                      uniqueCreators,
+                      updatedCreators,
+                    }))
+                  ) {
+                    notify({ message: 'Cancelled', type: 'info' });
+
+                    return;
+                  }
+                }
+
                 notify({
                   message: 'Saving...',
                   type: 'info',
                 });
                 if (hasHolder && holderInfo) {
-                  updatedCreators[holderInfo.pubkey] = new WhitelistedCreator(
-                    {
-                      activated: true,
-                      address: holderInfo.pubkey,
-                    },
-                  );
+                  updatedCreators[holderInfo.pubkey] = new WhitelistedCreator({
+                    activated: true,
+                    address: holderInfo.pubkey,
+                  });
                 }
                 await saveAdmin(
                   connection,
@@ -337,7 +441,6 @@ function InnerAdminView({
             columns={columns}
             dataSource={Object.keys(uniqueCreatorsWithUpdates).map(key => ({
               key,
-              holder: hasHolder && key === holderInfo?.pubkey,
               address: uniqueCreatorsWithUpdates[key].address,
               activated: uniqueCreatorsWithUpdates[key].activated,
               name:

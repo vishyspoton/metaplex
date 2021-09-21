@@ -5,13 +5,56 @@ import {
   WhitelistedCreator,
 } from '@oyster/common';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { Button } from 'antd';
-import { useCallback, useEffect, useState } from 'react';
+import { Button, Modal } from 'antd';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { saveAdmin } from '../../actions/saveAdmin';
 import { useMeta } from '../../contexts';
 import { SetupVariables } from '../../components/SetupVariables';
-import { useHolderInfo } from '../../utils/holder';
+import { HolderInfo, useHolderInfo } from '../../utils/holder';
+
+type ConfirmHolderFn = () => Promise<string | undefined>;
+
+function AddHolaplexModal({
+  holderInfo,
+  confirmRef,
+}: {
+  holderInfo: HolderInfo;
+  confirmRef: (val: ConfirmHolderFn) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const promisesRef = useRef<Array<(ok: string | undefined) => void>>([]);
+
+  confirmRef(
+    useCallback<ConfirmHolderFn>(async (): Promise<string | undefined> => {
+      setIsOpen(true);
+      return await new Promise<string | undefined>(ok =>
+        promisesRef.current.push(ok),
+      );
+    }, [setIsOpen]),
+  );
+
+  return (
+    <Modal
+      title="One quick thing..."
+      okText="Yes"
+      cancelText="No"
+      visible={isOpen}
+      onOk={() => {
+        promisesRef.current.splice(0).forEach(p => p(holderInfo.pubkey));
+        setIsOpen(false);
+      }}
+      onCancel={() => {
+        promisesRef.current.splice(0).forEach(p => p(undefined));
+        setIsOpen(false);
+      }}
+    >
+      Would you like to add Holaplex as a co-creator on your storefront? This
+      will enable Holaplex to collect {holderInfo.split}% of all future
+      proceeds.
+    </Modal>
+  );
+}
 
 export const SetupView = () => {
   const [isInitalizingStore, setIsInitalizingStore] = useState(false);
@@ -26,6 +69,9 @@ export const SetupView = () => {
     [wallet.wallet, wallet.connect, setVisible],
   );
   const [storeAddress, setStoreAddress] = useState<string | undefined>();
+
+  const holderInfo = useHolderInfo();
+  const confirmHolder = useRef<ConfirmHolderFn | undefined>(undefined);
 
   useEffect(() => {
     const getStore = async () => {
@@ -46,16 +92,19 @@ export const SetupView = () => {
 
     setIsInitalizingStore(true);
 
-    const holderInfo = useHolderInfo();
+    const holderKey = confirmHolder.current
+      ? await confirmHolder.current()
+      : undefined;
 
-    const holderCreators = holderInfo
-      ? [
-          new WhitelistedCreator({
-            address: holderInfo.pubkey,
-            activated: true,
-          }),
-        ]
-      : [];
+    const holderCreators =
+      holderKey !== undefined
+        ? [
+            new WhitelistedCreator({
+              address: holderKey,
+              activated: true,
+            }),
+          ]
+        : [];
 
     await saveAdmin(connection, wallet, false, [
       new WhitelistedCreator({
@@ -93,6 +142,12 @@ export const SetupView = () => {
           </p>
 
           <p>
+            {holderInfo !== undefined && (
+              <AddHolaplexModal
+                holderInfo={holderInfo}
+                confirmRef={f => (confirmHolder.current = f)}
+              />
+            )}
             <Button
               className="app-btn"
               type="primary"
