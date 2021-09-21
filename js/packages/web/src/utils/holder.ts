@@ -1,7 +1,6 @@
-import { ParsedAccount } from '@oyster/common';
+import { ParsedAccount, WhitelistedCreator } from '@oyster/common';
 import { PublicKey } from '@solana/web3.js';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { WhitelistedCreator } from '../models/metaplex';
 
 export interface HolderInfo {
   pubkey: string;
