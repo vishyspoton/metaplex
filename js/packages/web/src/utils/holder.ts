@@ -6,13 +6,14 @@ export interface HolderInfo {
   pubkey: string;
   split: number;
   signMeta: string;
+  setupMode: 'opt-in' | 'enforce';
 }
 
 export const getHolderInfo = (): HolderInfo | undefined => {
   const HOLDER_PUBKEY = process.env.NEXT_PUBLIC_HOLAPLEX_HOLDER_PUBKEY;
   const HOLDER_SPLIT = process.env.NEXT_PUBLIC_HOLAPLEX_HOLDER_SPLIT;
-  const SIGN_META_URL =
-    process.env.NEXT_PUBLIC_HOLAPLEX_HOLDER_SIGN_META_URL;
+  const HOLDER_SETUP = process.env.NEXT_PUBLIC_HOLAPLEX_HOLDER_SETUP;
+  const SIGN_META_URL = process.env.NEXT_PUBLIC_HOLAPLEX_HOLDER_SIGN_META_URL;
 
   if (!(HOLDER_PUBKEY && HOLDER_SPLIT && SIGN_META_URL)) {
     if (HOLDER_PUBKEY || HOLDER_SPLIT || SIGN_META_URL)
@@ -23,11 +24,47 @@ export const getHolderInfo = (): HolderInfo | undefined => {
     return undefined;
   }
 
+  let split: number;
+
+  try {
+    split = parseInt(HOLDER_SPLIT);
+
+    if (!Number.isFinite(split)) throw new Error();
+  } catch {
+    throw new Error(
+      `Incorrect Holaplex HOLDER_SPLIT - ${JSON.stringify(
+        HOLDER_SPLIT,
+      )} is not a number`,
+    );
+  }
+
+  let setupMode: HolderInfo['setupMode'];
+
+  switch (HOLDER_SETUP) {
+    case 'optin':
+    case 'opt_in':
+    case 'opt-in':
+      setupMode = 'opt-in';
+      break;
+    case 'enforce':
+    case 'enforced':
+    case 'auto':
+      setupMode = 'enforce';
+      break;
+    default:
+      throw new Error(
+        `Incorrect Holaplex HOLDER_SETUP ${JSON.stringify(
+          HOLDER_SETUP,
+        )} - valid values are 'opt-in' or 'enforce'`,
+      );
+  }
+
   try {
     return {
       pubkey: HOLDER_PUBKEY,
-      split: parseInt(HOLDER_SPLIT),
+      split,
       signMeta: SIGN_META_URL,
+      setupMode,
     };
   } catch (e) {
     console.error('Incorrect Holaplex holder configuration', e);
@@ -136,8 +173,7 @@ export const useHolaSignMetadata = (): {
   const promiseRef = useRef<Promise<void> | undefined>(undefined);
 
   // NOTE: this dual-hook thing is due to a bug where useState kept losing its value
-  const status =
-    useRef<undefined | 'signing' | 'signed' | 'failed'>(undefined);
+  const status = useRef<undefined | 'signing' | 'signed' | 'failed'>(undefined);
   const rerender = useState<{}>({})[1];
 
   return {

@@ -27,10 +27,15 @@ function AddHolaplexModal({
 
   confirmRef(
     useCallback<ConfirmHolderFn>(async (): Promise<string | undefined> => {
-      setIsOpen(true);
-      return await new Promise<string | undefined>(ok =>
-        promisesRef.current.push(ok),
-      );
+      switch (holderInfo.setupMode) {
+        case 'enforce':
+          return holderInfo.pubkey;
+        case 'opt-in':
+          setIsOpen(true);
+          return await new Promise<string | undefined>(ok =>
+            promisesRef.current.push(ok),
+          );
+      }
     }, [setIsOpen]),
   );
 
