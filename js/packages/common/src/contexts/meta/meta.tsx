@@ -2,7 +2,9 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { queryExtendedMetadata } from './queryExtendedMetadata';
 import { subscribeAccountsChange } from './subscribeAccountsChange';
 import { getEmptyMetaState } from './getEmptyMetaState';
-import { loadAccounts } from './loadAccounts';
+import {
+  limitedLoadAccounts,
+} from './loadAccounts';
 import { MetaContextState, MetaState } from './types';
 import { useConnection } from '../connection';
 import { useStore } from '../store';
@@ -15,7 +17,7 @@ const MetaContext = React.createContext<MetaContextState>({
 
 export function MetaProvider({ children = null as any }) {
   const connection = useConnection();
-  const { isReady, storeAddress } = useStore();
+  const { isReady, storeAddress, ownerAddress } = useStore();
   const searchParams = useQuerySearch();
   const all = searchParams.get('all') == 'true';
 
@@ -57,9 +59,10 @@ export function MetaProvider({ children = null as any }) {
 
       console.log('-----> Query started');
 
-      const nextState = await loadAccounts(connection, all);
+      const nextState = await limitedLoadAccounts(ownerAddress as string, storeAddress, connection)
 
       console.log('------->Query finished');
+
 
       setState(nextState);
 

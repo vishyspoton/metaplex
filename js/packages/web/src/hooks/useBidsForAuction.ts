@@ -5,13 +5,13 @@ import {
   cache,
   ParsedAccount,
   StringPublicKey,
+  useMeta,
 } from '@oyster/common';
 
 export const useHighestBidForAuction = (
   auctionPubkey: StringPublicKey | string,
 ) => {
   const bids = useBidsForAuction(auctionPubkey);
-
   const winner = useMemo(() => {
     return bids?.[0];
   }, [bids]);
@@ -29,17 +29,18 @@ export const useBidsForAuction = (auctionPubkey: StringPublicKey | string) => {
         : auctionPubkey,
     [auctionPubkey],
   );
+  const { bidderMetadataByAuctionAndBidder } = useMeta();
 
   const [bids, setBids] = useState<ParsedAccount<BidderMetadata>[]>([]);
 
   useEffect(() => {
     const dispose = cache.emitter.onCache(args => {
       if (args.parser === BidderMetadataParser) {
-        setBids(getBids(id));
+        setBids(getBids(bidderMetadataByAuctionAndBidder, id));
       }
     });
 
-    setBids(getBids(id));
+    setBids(getBids(bidderMetadataByAuctionAndBidder, id));
 
     return () => {
       dispose();
@@ -49,21 +50,21 @@ export const useBidsForAuction = (auctionPubkey: StringPublicKey | string) => {
   return bids;
 };
 
-const getBids = (id?: StringPublicKey) => {
-  return cache
-    .byParser(BidderMetadataParser)
-    .filter(key => {
-      const bidder = cache.get(key) as ParsedAccount<BidderMetadata>;
-      if (!bidder) {
-        return false;
-      }
+const getBids = (
+  bidderMetadataByAuctionAndBidder: Record<
+    string,
+    ParsedAccount<BidderMetadata>
+  >,
+  id?: StringPublicKey,
+) => {
+  // I have no idea why, but cache doesnt work with speed run and i couldnt figure it out for the life of me,
+  // because that file is so confusing I have no idea how it works.
+  // so we use the tempCache for pulling bids. B come save me.- J
+  const bids = Object.values(bidderMetadataByAuctionAndBidder).filter(
+    b => b.info.auctionPubkey === id,
+  );
 
-      return id === bidder.info.auctionPubkey;
-    })
-    .map(key => {
-      const bidder = cache.get(key) as ParsedAccount<BidderMetadata>;
-      return bidder;
-    })
+  return bids
     .sort((a, b) => {
       const lastBidDiff = b.info.lastBid.sub(a.info.lastBid).toNumber();
       if (lastBidDiff === 0) {
