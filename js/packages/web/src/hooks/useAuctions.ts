@@ -21,7 +21,6 @@ import { useEffect, useState } from 'react';
 import { useMeta } from '../contexts';
 import {
   AuctionManager,
-  AuctionManagerStatus,
   AuctionManagerV1,
   AuctionManagerV2,
   BidRedemptionTicket,
@@ -115,6 +114,12 @@ export const useAuctions = () => {
   const { publicKey } = useWallet();
   const [loading, setLoading] = useState(false);
   const cachedRedemptionKeys = useCachedRedemptionKeysByWallet();
+  const [auctionsToShow, setAuctionsToShow] = useState<
+    ParsedAccount<AuctionManagerV1 | AuctionManagerV2>[]
+  >([]);
+  const [auctionManagersToQuery, setAuctionManagersToQuery] = useState<
+    ParsedAccount<AuctionManagerV1 | AuctionManagerV2>[]
+  >([]);
 
   const {
     auctions,
@@ -133,23 +138,42 @@ export const useAuctions = () => {
     updateMetaState,
   } = useMeta();
 
-  const [tempAuctionManagers, setTempAuctionManagers] = useState<
-    ParsedAccount<AuctionManagerV1 | AuctionManagerV2>[]
-  >([]);
-
   useDeepCompareEffect(() => {
-    // TODO: sort asc by ending date before setting tempAuctionManagers
-    setTempAuctionManagers(Object.values(auctionManagersByAuction));
-  }, [auctionManagersByAuction]);
+    const initializedAuctions = Object.values(auctions).filter(
+      a => a.info.state > 0,
+    );
+    const mostRecentEndDate = (a, b) => {
+      if (a.info.endAuctionAt && b.info.endAuctionAt) {
+        return a.info.endAuctionAt.toNumber() - b.info.endAuctionAt?.toNumber();
+      } else {
+        return -1;
+      }
+    };
+    const startedAuctions = initializedAuctions
+      .filter(a => a.info.state === 1)
+      .sort(mostRecentEndDate);
+    const endedAuctions = initializedAuctions
+      .filter(a => a.info.state === 2)
+      .sort(mostRecentEndDate);
+    const auctionDisplayOrder = [...startedAuctions, ...endedAuctions];
+
+    const auctionManagers = auctionDisplayOrder.map(
+      auction => auctionManagersByAuction[auction.pubkey],
+    );
+
+    setAuctionManagersToQuery(auctionManagers);
+  }, [auctions, auctionManagersByAuction]);
 
   const loadMoreAuctions = () => {
-    const ams = [...tempAuctionManagers];
+    const needLoading = [...auctionManagersToQuery];
+    const loaded = [...auctionsToShow];
 
-    if (ams.length === 0) {
+    if (needLoading.length === 0) {
       return;
     }
+
     setLoading(true);
-    const auctionsToLoad = ams.splice(0, 8);
+    const auctionsToLoad = needLoading.splice(0, 8);
 
     Promise.all(
       auctionsToLoad.map(auctionManager =>
@@ -164,13 +188,14 @@ export const useAuctions = () => {
         updateMetaState(newState);
       }
 
-      setTempAuctionManagers(ams);
+      setAuctionManagersToQuery(needLoading);
+      setAuctionsToShow([...loaded, ...auctionsToLoad]);
       setLoading(false);
     });
   };
 
   useEffect(() => {
-    const views = Object.values(auctionManagersByAuction).map(a => {
+    const views = auctionsToShow.reduce((memo: AuctionView[], a) => {
       const auction = auctions[a.info.auction];
       const nextAuctionView = processAccountsIntoAuctionView(
         publicKey?.toBase58(),
@@ -190,10 +215,14 @@ export const useAuctions = () => {
         cachedRedemptionKeys,
       );
 
-      return nextAuctionView;
-    });
+      if (nextAuctionView) {
+        return [...memo, nextAuctionView];
+      }
 
-    setAuctionViews(views.filter(v => v) as AuctionView[]);
+      return memo;
+    }, []);
+
+    setAuctionViews(views);
   }, [
     auctions,
     auctionManagersByAuction,
@@ -217,7 +246,7 @@ export const useAuctions = () => {
     loading,
     auctions: auctionViews,
     loadMore: loadMoreAuctions,
-    hasNextPage: tempAuctionManagers.length > 0,
+    hasNextPage: auctionManagersToQuery.length > 0,
   };
 };
 
