@@ -138,6 +138,7 @@ export const useAuctions = () => {
   >([]);
 
   useDeepCompareEffect(() => {
+    // TODO: sort asc by ending date before setting tempAuctionManagers
     setTempAuctionManagers(Object.values(auctionManagersByAuction));
   }, [auctionManagersByAuction]);
 
