@@ -5,10 +5,12 @@ import { getEmptyMetaState } from './getEmptyMetaState';
 import {
   limitedLoadAccounts,
 } from './loadAccounts';
+import { merge } from 'lodash'
 import { MetaContextState, MetaState } from './types';
 import { useConnection } from '../connection';
 import { useStore } from '../store';
 import { useQuerySearch } from '../../hooks';
+import { stat } from 'fs';
 
 const MetaContext = React.createContext<MetaContextState>({
   ...getEmptyMetaState(),
@@ -24,6 +26,11 @@ export function MetaProvider({ children = null as any }) {
   const [state, setState] = useState<MetaState>(getEmptyMetaState());
 
   const [isLoading, setIsLoading] = useState(true);
+
+  const updateMetaState = (newState: MetaState) => {
+    const nextState = merge({}, state, newState, { store: state.store })
+    setState(nextState)
+  }
 
   const updateMints = useCallback(
     async metadataByMint => {
@@ -113,6 +120,7 @@ export function MetaProvider({ children = null as any }) {
       value={{
         ...state,
         isLoading,
+        updateMetaState
       }}
     >
       {children}
