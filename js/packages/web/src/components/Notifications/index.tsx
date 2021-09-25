@@ -27,7 +27,7 @@ import { settle } from '../../actions/settle';
 import { startAuctionManually } from '../../actions/startAuctionManually';
 import { QUOTE_MINT } from '../../constants';
 import { useMeta } from '../../contexts';
-import { AuctionViewState, useAuctions } from '../../hooks';
+import { expandAuctionView, useAuctionsLimited } from '../../hooks';
 
 interface NotificationCard {
   id: string;
@@ -182,7 +182,7 @@ export function useSettlementAuctions({
   const { accountByMint } = useUserAccounts();
   const walletPubkey = wallet?.publicKey?.toBase58();
   const { bidderPotsByAuctionAndBidder } = useMeta();
-  const { auctions } = useAuctions();
+  const auctions = useAuctionsLimited();
 
   const [validDiscoveredEndedAuctions, setValidDiscoveredEndedAuctions] =
     useState<Record<string, number>>({});
@@ -192,7 +192,7 @@ export function useSettlementAuctions({
         .filter(
           a =>
             walletPubkey &&
-            a.auctionManager.authority === walletPubkey &&
+            a.manager.info.authority === walletPubkey &&
             a.auction.info.ended(),
         )
         .sort(
@@ -202,11 +202,11 @@ export function useSettlementAuctions({
         );
       for (let i = 0; i < nextBatch.length; i++) {
         const av = nextBatch[i];
-        if (!CALLING_MUTEX[av.auctionManager.pubkey]) {
-          CALLING_MUTEX[av.auctionManager.pubkey] = true;
+        if (!CALLING_MUTEX[av.manager.pubkey]) {
+          CALLING_MUTEX[av.manager.pubkey] = true;
           try {
             const balance = await connection.getTokenAccountBalance(
-              toPublicKey(av.auctionManager.acceptPayment),
+              toPublicKey(av.manager.info.acceptPayment),
             );
             if (
               ((balance.value.uiAmount || 0) === 0 &&
@@ -217,7 +217,7 @@ export function useSettlementAuctions({
             ) {
               setValidDiscoveredEndedAuctions(old => ({
                 ...old,
-                [av.auctionManager.pubkey]: balance.value.uiAmount || 0,
+                [av.manager.pubkey]: balance.value.uiAmount || 0,
               }));
             }
           } catch (e) {
@@ -231,12 +231,12 @@ export function useSettlementAuctions({
 
   Object.keys(validDiscoveredEndedAuctions).forEach(auctionViewKey => {
     const auctionView = auctions.find(
-      a => a.auctionManager.pubkey === auctionViewKey,
+      a => a.manager.pubkey === auctionViewKey,
     );
     if (!auctionView) return;
     const winners = [...auctionView.auction.info.bidState.bids]
       .reverse()
-      .slice(0, auctionView.auctionManager.numWinners.toNumber())
+      .slice(0, auctionView.auction.info.bidState.max.toNumber())
       .reduce((acc: Record<string, boolean>, r) => {
         acc[r.key] = true;
         return acc;
@@ -268,7 +268,7 @@ export function useSettlementAuctions({
             await settle(
               connection,
               wallet,
-              auctionView,
+              await expandAuctionView(auctionView),
               // Just claim all bidder pots
               bidsToClaim,
               myPayingAccount?.pubkey,
@@ -296,11 +296,10 @@ export function Notifications() {
     vaults,
     safetyDepositBoxesByVaultAndIndex,
   } = useMeta();
-  const { auctions } = useAuctions();
+  const auctions = useAuctionsLimited();
 
   const connection = useConnection();
   const wallet = useWallet();
-  const { accountByMint } = useUserAccounts();
 
   const notifications: NotificationCard[] = [];
 
@@ -349,10 +348,10 @@ export function Notifications() {
   });
 
   auctions
-    .filter(v => v.auctionManager.authority === walletPubkey)
+    .filter(v => v.manager.info.authority === walletPubkey)
     .forEach(v => {
       notifications.push({
-        id: v.auctionManager.pubkey,
+        id: v.manager.pubkey,
         title: 'You have items locked in a defective auction!',
         description: (
           <span>
@@ -365,7 +364,7 @@ export function Notifications() {
             await decommAuctionManagerAndReturnPrizes(
               connection,
               wallet,
-              v,
+              await expandAuctionView(v),
               safetyDepositBoxesByVaultAndIndex,
             );
           } catch (e) {
@@ -418,15 +417,15 @@ export function Notifications() {
   });
 
   auctions
-    .filter(v => v.auctionManager.authority === walletPubkey)
+    .filter(v => v.manager.info.authority === walletPubkey)
     .forEach(v => {
       notifications.push({
-        id: v.auctionManager.pubkey,
+        id: v.manager.pubkey,
         title: 'You have an auction which is not started yet!',
         description: <span>You can activate it now if you wish.</span>,
         action: async () => {
           try {
-            await startAuctionManually(connection, wallet, v);
+            await startAuctionManually(connection, wallet, await expandAuctionView(v));
           } catch (e) {
             console.error(e);
             return false;

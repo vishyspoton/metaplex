@@ -21,7 +21,6 @@ import { useEffect, useState } from 'react';
 import { useMeta } from '../contexts';
 import {
   AuctionManager,
-  AuctionManagerStatus,
   AuctionManagerV1,
   AuctionManagerV2,
   BidRedemptionTicket,
@@ -57,6 +56,32 @@ export interface AuctionView {
   vault: ParsedAccount<Vault>;
   totallyComplete: boolean;
 }
+
+export interface AuctionViewLimited {
+  manager: ParsedAccount<AuctionManagerV1 | AuctionManagerV2>;
+  auction: ParsedAccount<AuctionData>;
+  vault: ParsedAccount<Vault>;
+}
+
+export const limitAuctionView = ({
+  auction,
+  auctionManager,
+  vault,
+}: AuctionView): AuctionViewLimited => {
+  return {
+    manager: auctionManager.instance,
+    auction,
+    vault,
+  };
+};
+
+export const expandAuctionView = async ({
+  manager,
+  auction,
+  vault,
+}: AuctionViewLimited): Promise<AuctionView> => {
+  throw new Error('Not yet implemented');
+};
 
 export function useCachedRedemptionKeysByWallet() {
   const { auctions, bidRedemptions } = useMeta();
@@ -219,6 +244,25 @@ export const useAuctions = () => {
     loadMore: loadMoreAuctions,
     hasNextPage: tempAuctionManagers.length > 0,
   };
+};
+
+export const useAuctionsLimited = (): AuctionViewLimited[] => {
+  const { auctionManagersByAuction, auctions, vaults } = useMeta();
+  const { publicKey } = useWallet();
+
+  if (!publicKey) return [];
+
+  return Object.keys(auctionManagersByAuction).map(
+    (key): AuctionViewLimited => {
+      const manager = auctionManagersByAuction[key];
+
+      return {
+        manager,
+        auction: auctions[manager.info.auction],
+        vault: vaults[manager.info.vault],
+      };
+    },
+  );
 };
 
 function buildListWhileNonZero<T>(hash: Record<string, T>, key: string) {
