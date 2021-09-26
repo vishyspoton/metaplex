@@ -5,7 +5,7 @@ import { getEmptyMetaState } from './getEmptyMetaState';
 import {
   limitedLoadAccounts,
 } from './loadAccounts';
-import { Spin } from 'antd';
+import { Spin, Space } from 'antd';
 import { merge } from 'lodash'
 import { MetaContextState, MetaState } from './types';
 import { useConnection } from '../connection';
@@ -20,7 +20,7 @@ const MetaContext = React.createContext<MetaContextState>({
 
 export function MetaProvider({ children = null as any }) {
   const connection = useConnection();
-  const { isReady, storeAddress, ownerAddress } = useStore();
+  const { isReady, storeAddress, ownerAddress, storefront } = useStore();
   const searchParams = useQuerySearch();
   const all = searchParams.get('all') == 'true';
 
@@ -126,7 +126,10 @@ export function MetaProvider({ children = null as any }) {
     >
       {isLoading ? (
         <div className="app--loading">
-          <Spin size="large" indicator={<LoadingOutlined />} />
+          <Space direction="vertical" size="middle">
+            <img src={storefront.theme.logo} className="app--loading-logo" />
+            <Spin indicator={<LoadingOutlined />} />
+          </Space>
         </div>
       ) : children}
     </MetaContext.Provider>

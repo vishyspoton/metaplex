@@ -2,7 +2,7 @@ import {
   ArweaveTransaction,
   Storefront,
   ArweaveQueryResponse,
-} from './../models/storefront';
+} from '@oyster/common';
 import { maybeCDN } from '../utils/cdn';
 
 const ARWEAVE_URL = process.env.NEXT_PUBLIC_ARWEAVE_URL;
