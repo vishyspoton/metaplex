@@ -19,7 +19,7 @@ export const getStorefront = async (
       body: JSON.stringify({
         query: `
             query GetStorefrontTheme($subdomain: String!) {
-              transactions(tags:[{ name: "holaplex:metadata:subdomain", values: [$subdomain]}], first: 1) {
+              transactions(tags:[{ name: "holaplex:metadata:subdomain", values: [$subdomain]}], sort: HEIGHT_DESC, first: 1) {
                 edges {
                   node {
                     id
