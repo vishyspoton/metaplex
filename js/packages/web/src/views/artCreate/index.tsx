@@ -43,6 +43,7 @@ import { AmountLabel } from '../../components/AmountLabel';
 import useWindowDimensions from '../../utils/layout';
 import { LoadingOutlined, MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { RcFile } from 'antd/lib/upload';
+import Bugsnag from '@bugsnag/browser';
 
 const { Step } = Steps;
 const { Dragger } = Upload;
@@ -124,10 +125,11 @@ export const ArtCreateView = () => {
         setNFTcreateProgress,
         attributes.properties?.maxSupply,
       );
-
+      
       if (_nft) setNft(_nft);
     } catch (e: any) {
-      setAlertMessage(e.message)
+      Bugsnag.notify(e);
+      setAlertMessage(e.message);
     } finally {
       setMinting(false);
     }
