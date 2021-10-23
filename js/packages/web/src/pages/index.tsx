@@ -62,7 +62,7 @@ function App({ storefront }: AppProps) {
   }, [hasLogo, hasStylesheet]);
 
   useEffect(() => {
-    const head = document.head;
+    // const head = document.head;
     const link = document.createElement('link');
 
     link.type = 'text/css';
@@ -71,10 +71,11 @@ function App({ storefront }: AppProps) {
     // link.href = 'http://localhost:3000/demo-theme.css'
 
     link.onload = () => {
-      setHasStylesheet(true);
+      // setHasStylesheet(true);
     };
 
-    head.appendChild(link);
+    // head.appendChild(link);
+    setHasStylesheet(true);
   }, []);
 
   useEffect(() => {
