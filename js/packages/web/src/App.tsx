@@ -1,6 +1,6 @@
 import React from 'react';
-import { Storefront } from '@oyster/common';
 import { Routes } from './routes';
+import { Storefront } from '@oyster/common';
 
 interface AppProps {
   storefront: Storefront;

@@ -57,7 +57,6 @@ import {
   MAX_PRIZE_TRACKING_TICKET_SIZE,
   WinningConfigType,
 } from '@oyster/common/dist/lib/models/metaplex/index';
-import { LoadingOutlined } from '@ant-design/icons';
 
 async function calculateTotalCostOfRedeemingOtherPeoplesBids(
   connection: Connection,
@@ -378,13 +377,9 @@ export const AuctionCard = ({
 
                 auctionView.auction = newState.auctions[auctionKey];
                 auctionView.myBidderPot =
-                  newState.bidderPotsByAuctionAndBidder[
-                    auctionBidderKey
-                  ];
+                  newState.bidderPotsByAuctionAndBidder[auctionBidderKey];
                 auctionView.myBidderMetadata =
-                  newState.bidderMetadataByAuctionAndBidder[
-                    auctionBidderKey
-                  ];
+                  newState.bidderMetadataByAuctionAndBidder[auctionBidderKey];
               }
 
               // Stop retrying on success
@@ -726,11 +721,7 @@ export const AuctionCard = ({
               }}
               style={{ marginTop: 20 }}
             >
-              {loading ? (
-                <Spin indicator={<LoadingOutlined />} />
-              ) : (
-                'Start auction'
-              )}
+              {loading ? <Spin /> : 'Start auction'}
             </Button>
           ) : loading ? (
             <Spin />
@@ -790,6 +781,7 @@ export const AuctionCard = ({
       <MetaplexOverlay visible={showBidPlaced}>
         <Confetti />
         <h1
+          className="title"
           style={{
             fontSize: '3rem',
             marginBottom: 20,
@@ -799,6 +791,7 @@ export const AuctionCard = ({
         </h1>
         <p
           style={{
+            color: 'white',
             textAlign: 'center',
             fontSize: '2rem',
           }}
@@ -814,6 +807,7 @@ export const AuctionCard = ({
       <MetaplexOverlay visible={showRedeemedBidModal}>
         <Confetti />
         <h1
+        className="title"
           style={{
             fontSize: '3rem',
             marginBottom: 20,
@@ -823,6 +817,7 @@ export const AuctionCard = ({
         </h1>
         <p
           style={{
+            color: 'white',
             textAlign: 'center',
             fontSize: '2rem',
           }}

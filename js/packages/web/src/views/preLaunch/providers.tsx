@@ -1,5 +1,6 @@
+import React from 'react';
 import { Storefront, StoreProvider } from '@oyster/common';
-import React, { FC } from 'react';
+import { FC } from 'react';
 export const Providers: FC<{ storefront: Storefront }> = ({
   children,
   storefront,

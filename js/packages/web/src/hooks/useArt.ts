@@ -16,6 +16,7 @@ import { WhitelistedCreator } from '@oyster/common/dist/lib/models/metaplex/inde
 import { Cache } from 'three';
 import { useInView } from 'react-intersection-observer';
 import { maybeCDN } from '../utils/cdn';
+import useWindowDimensions from '../utils/layout';
 
 const metadataToArt = (
   info: Metadata | undefined,
@@ -173,6 +174,7 @@ export const useExtendedArt = (id?: StringPublicKey) => {
   const { metadata } = useMeta();
 
   const [data, setData] = useState<IMetadataExtension>();
+  const { width } = useWindowDimensions();
   const { ref, inView } = useInView({ root: null, rootMargin: '-100px 0px' });
   const localStorage = useLocalStorage();
 
@@ -184,9 +186,11 @@ export const useExtendedArt = (id?: StringPublicKey) => {
   );
 
   useEffect(() => {
-    if (inView && id && !data) {
+    if ((inView || width < 768) && id && !data) {
+      const routeCDN = maybeCDN;
+
       if (account && account.info.data.uri) {
-        const uri = maybeCDN(account.info.data.uri);
+        const uri = routeCDN(account.info.data.uri);
 
         const processJson = (extended: any) => {
           if (!extended || extended?.properties?.files?.length === 0) {
@@ -197,7 +201,7 @@ export const useExtendedArt = (id?: StringPublicKey) => {
             const file = extended.image.startsWith('http')
               ? extended.image
               : `${account.info.data.uri}/${extended.image}`;
-            extended.image = maybeCDN(file);
+            extended.image = routeCDN(file);
           }
 
           return extended;

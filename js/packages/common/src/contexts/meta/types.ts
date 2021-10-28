@@ -78,13 +78,11 @@ export interface MetaContextState extends MetaState {
   update: (
     auctionAddress?: any,
     bidderAddress?: any,
-  ) => Promise<
-    [
-      ParsedAccount<AuctionData>,
-      ParsedAccount<BidderPot>,
-      ParsedAccount<BidderMetadata>,
-    ]
-  >;
+  ) => [
+    ParsedAccount<AuctionData>,
+    ParsedAccount<BidderPot>,
+    ParsedAccount<BidderMetadata>,
+  ];
   patchState: (state: Partial<MetaState>) => MetaState;
 }
 
@@ -102,7 +100,7 @@ export type UpdateStateValueFunc<T = void> = (
 export type ProcessAccountsFunc = (
   account: PublicKeyStringAndAccount<Buffer>,
   setter: UpdateStateValueFunc,
-) => Promise<void>;
+) => void;
 
 export type CheckAccountFunc = (account: AccountInfo<Buffer>) => boolean;
 

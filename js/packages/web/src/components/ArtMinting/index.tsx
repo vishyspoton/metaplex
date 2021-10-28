@@ -215,7 +215,9 @@ export const ArtMinting = ({ id, onMint }: ArtMintingProps) => {
           <MetaplexOverlay visible={showCongrats}>
             <Confetti />
             <h1
+              className="title"
               style={{
+                fontSize: '3rem',
                 marginBottom: 20,
               }}
             >
