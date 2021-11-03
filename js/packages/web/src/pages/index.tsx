@@ -26,7 +26,7 @@ if (process.env.NEXT_PUBLIC_BUGSNAG_API_KEY) {
 
 export async function getServerSideProps(context: NextPageContext) {
   const headers = context?.req?.headers || {};
-  let forwarded = headers.forwarded?.split(';').reduce((acc: any, entry) => {
+  const forwarded = headers.forwarded?.split(';').reduce((acc: any, entry) => {
     const [key, value] = entry.split('=');
     acc[key] = value;
 
@@ -45,12 +45,12 @@ export async function getServerSideProps(context: NextPageContext) {
     return { props: { storefront } };
   }
 
-  return {
+  return { // should we wrap this in props? ({props: {notFound: true}})
     notFound: true,
   };
 }
 
-function App({ storefront }: AppProps) {
+function AppWrapper({ storefront }: AppProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [hasLogo, setHasLogo] = useState(false);
   const [hasStylesheet, setHasStylesheet] = useState(false);
@@ -101,11 +101,11 @@ function App({ storefront }: AppProps) {
             <link rel="icon" type="image/png" href={storefront.meta.favicon} />
           </>
         )}
-        <meta name="description" content={storefront.meta.description} />
-        <meta property="og:type" content="website" />
-        <meta property="og:image" content={storefront.theme.logo} />
-        <meta property="og:title" content={storefront.meta.title} />
-        <meta property="og:description" content={storefront.meta.description} />
+        <meta name="description" content={storefront.meta.description} key="description" />
+        <meta property="og:type" content="website" key="og:type" />
+        <meta property="og:image" content={storefront.theme.logo} key="og:image" />
+        <meta property="og:title" content={storefront.meta.title} key="og:title" />
+        <meta property="og:description" content={storefront.meta.description} key="og:description" />
         <title>{storefront.meta.title}</title>
       </Head>
       {isMounted && <CreateReactAppEntryPoint storefront={storefront} />}
@@ -130,4 +130,4 @@ function App({ storefront }: AppProps) {
   );
 }
 
-export default App;
+export default AppWrapper;

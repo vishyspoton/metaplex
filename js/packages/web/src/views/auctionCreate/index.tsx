@@ -1813,12 +1813,12 @@ const Congrats = (props: {
 
   const newTweetURL = () => {
     const params = {
-      text: "I've created a new NFT auction on Metaplex, check it out!",
-      url: `${window.location.origin
-        }/#/auction/${props.auction?.auction.toString()}`,
+      text: "I've listed an NFT on my @Holaplex store, check it out!",
       hashtags: 'NFT,Crypto,Metaplex',
       // via: "Metaplex",
       related: 'Metaplex,Solana',
+      url: `${window.location.origin
+        }/#/auction/${props.auction?.auction.toString()}`,
     };
     const queryParams = new URLSearchParams(params).toString();
     return `https://twitter.com/intent/tweet?${queryParams}`;

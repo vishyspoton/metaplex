@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Head from 'next/head';
 import { useParams } from 'react-router-dom';
 import { Row, Col, Button, Skeleton, Carousel, List, Space, Spin } from 'antd';
 import { AuctionCard } from '../../components/AuctionCard';
@@ -48,7 +49,7 @@ export const AuctionItem = ({
   active?: boolean;
 }) => {
   const id = item.metadata.pubkey;
-  var style: React.CSSProperties = {
+  const style: React.CSSProperties = {
     transform:
       index === 0
         ? ''
@@ -135,6 +136,7 @@ export const AuctionView = () => {
 
   return (
     <>
+    {/* Overwrite meta tags in <Head> here when we get this to SSR */}
       <Row justify="space-around" ref={ref}>
         <Col span={24} md={12} className="pr-4">
           <div className="auction-view" style={{ minHeight: 300 }}>
@@ -356,6 +358,7 @@ const BidLine = (props: {
             <Row className="pubkey-row">
               <a
                 target="_blank"
+                rel="noreferrer"
                 title={shortenAddress(bidder)}
                 href={`https://twitter.com/${bidderTwitterHandle}`}
               >{`@${bidderTwitterHandle}`}</a>
