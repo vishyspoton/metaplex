@@ -13,14 +13,38 @@ import {
 import { AdminView } from './views/admin';
 import { BillingView } from './views/auction/billing';
 
+import { useLocation } from 'react-router';
+import { useEffect } from 'react';
+import { analyticsInitialized, analyticsUserId, initializeAnalytics, pageview, setAnalyticsUserId } from './utils/analytics';
+import { useWallet } from '@solana/wallet-adapter-react';
+
 interface RoutesProps {
   storefront: Storefront;
 }
+
+const Analytics = ({ storefront }: RoutesProps) => {
+  const { publicKey, connected } = useWallet();
+  const pubkey = publicKey?.toBase58() || '';
+  const location = useLocation();
+  useEffect(() => {
+    if(!analyticsInitialized) {
+      initializeAnalytics({subdomain: storefront.subdomain})
+    }
+    // basic "sign in / out check"
+    if(pubkey !== analyticsUserId) {
+      setAnalyticsUserId(pubkey)
+    }
+    pageview(location.pathname)
+  }, [location]);
+
+  return <></>;
+};
 
 export function Routes({ storefront }: RoutesProps) {
   return (
     <>
       <HashRouter basename={'/'}>
+        <Analytics storefront={storefront} />
         <Providers storefront={storefront}>
           <Switch>
             <Route exact path="/admin" component={() => <AdminView />} />
@@ -29,11 +53,7 @@ export function Routes({ storefront }: RoutesProps) {
               path="/artworks/new/:step_param?"
               component={() => <ArtCreateView />}
             />
-            <Route
-              exact
-              path="/owned"
-              component={() => <ArtworksView />}
-            />
+            <Route exact path="/owned" component={() => <ArtworksView />} />
             <Route exact path="/artworks/:id" component={() => <ArtView />} />
             <Route path="/artists/:id" component={() => <ArtistView />} />
             <Route

@@ -39,7 +39,7 @@ import BN from 'bn.js';
 import { Confetti } from '../Confetti';
 import { QUOTE_MINT } from '../../constants';
 import { Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { useMeta } from '../../contexts';
+import { useMeta, useSolPrice } from '../../contexts';
 import moment from 'moment';
 import { AccountLayout, MintLayout } from '@solana/spl-token';
 import { findEligibleParticipationBidsForRedemption } from '../../actions/claimUnusedPrizes';
@@ -52,6 +52,7 @@ import { LoadingOutlined } from '@ant-design/icons';
 import { useActionButtonContent } from './hooks/useActionButtonContent';
 import { endSale } from './utils/endSale';
 import { useInstantSaleState } from './hooks/useInstantSaleState';
+import { track } from '../../utils/analytics';
 
 async function calculateTotalCostOfRedeemingOtherPeoplesBids(
   connection: Connection,
@@ -550,12 +551,18 @@ export const AuctionCard = ({
                   setShowBidModal(false);
                   setShowBidPlaced(true);
                   setLoading(false);
+                  track('bid_submitted', {
+                    category: 'auction',
+                    label: '',
+                    value: value * useSolPrice(), //Google Analytics likes this one in USD :)
+                    sol_value: value
+                  })
                 }
               };
 
               const endInstantSale = async () => {
                 setLoading(true);
-
+                
                 try {
                   await endSale({
                     auctionView,
@@ -618,6 +625,14 @@ export const AuctionCard = ({
                       );
                       setLastBid({ amount });
                       bidTxid = txid;
+                      track('instant_sale_completed', {
+                        category: 'auction',
+                        label: 'confirmed',
+                        ...value && {
+                          value: value * useSolPrice(), //Google Analytics likes this one in USD :)
+                          sol_value: value
+                        }
+                      })
                     } catch (e) {
                       console.error('sendPlaceBid', e);
                       return;

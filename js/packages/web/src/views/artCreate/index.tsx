@@ -43,6 +43,8 @@ import { AmountLabel } from '../../components/AmountLabel';
 import useWindowDimensions from '../../utils/layout';
 import { LoadingOutlined, MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { RcFile } from 'antd/lib/upload';
+import { track } from '../../utils/analytics';
+import { useSolPrice } from '../../contexts';
 
 const { Step } = Steps;
 const { Dragger } = Upload;
@@ -130,6 +132,20 @@ export const ArtCreateView = () => {
       );
 
       if (_nft) setNft(_nft);
+
+      try {
+        const mintPriceSol = (await getSolCostForMint(files, connection, attributes))
+        track('nft_created', {
+          category: 'creation',
+          label: metadata.properties.category,
+          value: useSolPrice() * mintPriceSol,
+          sol_value: mintPriceSol
+        })
+      } catch (error) {
+        console.error(error)
+      }
+
+
     } catch (e: any) {
       setAlertMessage(e.message)
     } finally {
@@ -990,6 +1006,41 @@ const RoyaltiesStep = (props: {
       </Row>
     </>
   );
+};
+
+// could replace code below in useEffect
+const getSolCostForMint = async (
+  files: File[],
+  connection: Connection,
+  metadata: IMetadataExtension,
+) => {
+  const rentCall = Promise.all([
+    connection.getMinimumBalanceForRentExemption(MintLayout.span),
+    connection.getMinimumBalanceForRentExemption(MAX_METADATA_LEN),
+  ]);
+  if (files.length) {
+    const lamports = await getAssetCostToStore([
+      ...files,
+      new File([JSON.stringify(metadata)], 'metadata.json'),
+    ]);
+
+    const sol = lamports / LAMPORT_MULTIPLIER;
+
+    // TODO: cache this and batch in one call
+    const [mintRent, metadataRent] = await rentCall;
+
+    // const uriStr = 'x';
+    // let uriBuilder = '';
+    // for (let i = 0; i < MAX_URI_LENGTH; i++) {
+    //   uriBuilder += uriStr;
+    // }
+
+    const additionalSol = (metadataRent + mintRent) / LAMPORT_MULTIPLIER;
+
+    return sol + additionalSol;
+  } else {
+    return 0;
+  }
 };
 
 const LaunchStep = (props: {
