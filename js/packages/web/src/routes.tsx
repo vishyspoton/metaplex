@@ -41,7 +41,8 @@ const Analytics = ({ storefront }: RoutesProps) => {
         pubkey,
         endpoint,
         endpointName,
-        connected
+        connected,
+        isOwner: storefront.pubkey === pubkey
       },
       analytics: {
         analyticsInitialized,
@@ -51,7 +52,7 @@ const Analytics = ({ storefront }: RoutesProps) => {
     })
     // basic "sign in / out check"
     if(pubkey !== analyticsUserId) {
-      setAnalyticsUserId(pubkey)
+      setAnalyticsUserId(pubkey, pubkey === storefront.pubkey)
     }
     if(endpointName && endpointName !== network) {
       setNetwork(endpointName)

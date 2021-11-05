@@ -75,26 +75,26 @@ export const AuctionListView = () => {
           {auctions.map((m, idx) => {
             const id = m.auction.pubkey;
             return (
-              <Link to={`/auction/${id}`} key={idx}>
-                <AuctionRenderCard key={id} auctionView={m} onClick={() => {
-                  track('view_item', {
-                    category: 'auction',
-                    currency: "USD",
-                    value: 2 * 244, //solPrice * solValue,
-                    sol_value: 2,
-                    items: m.items.flat().map((i,j) => ({
-                      item_id: i.metadata.info.data.uri,
-                      item_name: i.metadata.info.data.name,
-                      affiliation: storefront.subdomain, // or page title?
-                      currency: 'USD',
-                      price: i.amount.toNumber() * 244, // 244 is sol price,
-                      sol_value: i.amount.toNumber(),
-                      index: j,
-                      quantity: 1
-                    }))
-                    // label: m.items.map(i => i.map(ii => ii.metadata.info.data.name))
-                  })
-                }} />
+              <Link to={`/auction/${id}`} key={idx} onClick={() => {
+                track('view_item', {
+                  category: 'auction',
+                  currency: "USD",
+                  value: 2 * 244, //solPrice * solValue,w
+                  sol_value: 2,
+                  items: m.items.flat().map((i,j) => ({
+                    item_id: i.metadata.info.data.uri,
+                    item_name: i.metadata.info.data.name,
+                    affiliation: storefront.subdomain, // or page title?
+                    currency: 'USD',
+                    price: i.amount.toNumber() * 244, // 244 is sol price,
+                    sol_value: i.amount.toNumber(),
+                    index: j,
+                    quantity: 1
+                  }))
+                  // label: m.items.map(i => i.map(ii => ii.metadata.info.data.name))
+                })
+              }}>
+                <AuctionRenderCard key={id} auctionView={m}  />
               </Link>
             );
           })}

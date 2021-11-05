@@ -17,6 +17,7 @@ interface CustomEventDimensions {
   // event dimensions
   store_domain: string;
   storefront_pubkey: string;
+  is_store_owner: boolean;
   network: string; // mainnet, devnet, etc.
   // metrics
   sol_value?: number;
@@ -35,10 +36,19 @@ export function initializeAnalytics(opts: {
   }
 }
 
-export function setAnalyticsUserId(userId: string) {
-  configureAnalytics({ user_id: userId, pubkey: userId });
+export function setAnalyticsUserId(userId: string, isOwner: boolean) {
+  // configureAnalytics({ user_id: userId, pubkey: userId });
+  if (!window['gtag']) return;
+  window['gtag']('set', 'user_properties', {
+    user_id: userId,
+    pubkey: userId,
+  });
+  if (isOwner) {
+    configureAnalytics({
+      is_store_owner: isOwner,
+    });
+  }
   analyticsUserId = userId;
-  // analyticsConfig.user_id = userId;
 }
 
 export function setNetwork(n: string) {
