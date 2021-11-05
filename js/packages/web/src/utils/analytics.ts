@@ -43,11 +43,9 @@ export function setAnalyticsUserId(userId: string, isOwner: boolean) {
     user_id: userId,
     pubkey: userId,
   });
-  if (isOwner) {
-    configureAnalytics({
-      is_store_owner: isOwner,
-    });
-  }
+  configureAnalytics({
+    is_store_owner: isOwner,
+  });
   analyticsUserId = userId;
 }
 
