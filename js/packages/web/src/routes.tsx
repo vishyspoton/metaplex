@@ -1,5 +1,5 @@
 import { HashRouter, Route, Switch } from 'react-router-dom';
-import { Storefront } from '@oyster/common';
+import { ENDPOINTS, Storefront, useConnection, useConnectionConfig } from '@oyster/common';
 import { Providers } from './providers';
 import {
   ArtCreateView,
@@ -15,7 +15,7 @@ import { BillingView } from './views/auction/billing';
 
 import { useLocation } from 'react-router';
 import { useEffect } from 'react';
-import { analyticsInitialized, analyticsUserId, initializeAnalytics, pageview, setAnalyticsUserId } from './utils/analytics';
+import { analyticsInitialized, analyticsUserId, initializeAnalytics, network, pageview, setAnalyticsUserId, setNetwork } from './utils/analytics';
 import { useWallet } from '@solana/wallet-adapter-react';
 
 interface RoutesProps {
@@ -23,17 +23,25 @@ interface RoutesProps {
 }
 
 const Analytics = ({ storefront }: RoutesProps) => {
-  const { publicKey, connected } = useWallet();
+  const { publicKey } = useWallet();
   const pubkey = publicKey?.toBase58() || '';
+  const {endpoint} =useConnectionConfig();
+  const endpointName = ENDPOINTS.find(e => e.endpoint === endpoint)?.name
+
+  if(!analyticsInitialized) {
+    initializeAnalytics({subdomain: storefront.subdomain, storefront_pubkey: storefront.pubkey,})
+  }
+  
+  // basic "sign in / out check"
+  if(pubkey !== analyticsUserId) {
+    setAnalyticsUserId(pubkey)
+  }
+  if(endpointName && endpointName !== network) {
+    setNetwork(endpointName)
+  }
+
   const location = useLocation();
   useEffect(() => {
-    if(!analyticsInitialized) {
-      initializeAnalytics({subdomain: storefront.subdomain})
-    }
-    // basic "sign in / out check"
-    if(pubkey !== analyticsUserId) {
-      setAnalyticsUserId(pubkey)
-    }
     pageview(location.pathname)
   }, [location]);
 

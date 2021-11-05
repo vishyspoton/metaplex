@@ -9,6 +9,7 @@ import { useInfiniteScrollAuctions, } from '../../hooks';
 import { useStore } from '@oyster/common';
 import { useAuctionManagersToCache } from '../../hooks';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { track } from '../../utils/analytics';
 
 export enum LiveAuctionViewState {
   All = '0',
@@ -34,7 +35,7 @@ export const AuctionListView = () => {
     500: 1,
   };
 
-  const { ownerAddress } = useStore();
+  const { ownerAddress, storefront } = useStore();
   const wallet = useWallet();
   const { auctionManagerTotal, auctionCacheTotal } = useAuctionManagersToCache();
   const isStoreOwner = ownerAddress === wallet.publicKey?.toBase58();
@@ -75,7 +76,25 @@ export const AuctionListView = () => {
             const id = m.auction.pubkey;
             return (
               <Link to={`/auction/${id}`} key={idx}>
-                <AuctionRenderCard key={id} auctionView={m} />
+                <AuctionRenderCard key={id} auctionView={m} onClick={() => {
+                  track('view_item', {
+                    category: 'auction',
+                    currency: "USD",
+                    value: 2 * 244, //solPrice * solValue,
+                    sol_value: 2,
+                    items: m.items.flat().map((i,j) => ({
+                      item_id: i.metadata.info.data.uri,
+                      item_name: i.metadata.info.data.name,
+                      affiliation: storefront.subdomain, // or page title?
+                      currency: 'USD',
+                      price: i.amount.toNumber() * 244, // 244 is sol price,
+                      sol_value: i.amount.toNumber(),
+                      index: j,
+                      quantity: 1
+                    }))
+                    // label: m.items.map(i => i.map(ii => ii.metadata.info.data.name))
+                  })
+                }} />
               </Link>
             );
           })}
