@@ -35,30 +35,31 @@ const Analytics = ({ storefront }: RoutesProps) => {
   
   const location = useLocation();
   useEffect(() => {
-    console.log({
-      newLocation: location.pathname,
-      actual: {
-        pubkey,
-        endpoint,
-        endpointName,
-        connected,
-        isOwner: storefront.pubkey === pubkey
-      },
-      analytics: {
-        analyticsInitialized,
-        analyticsUserId,
-        network
-      }
-    })
-    // basic "sign in / out check"
-    if(pubkey !== analyticsUserId) {
-      setAnalyticsUserId(pubkey, pubkey === storefront.pubkey)
-    }
-    if(endpointName && endpointName !== network) {
-      setNetwork(endpointName)
-    }
     pageview(location.pathname)
   }, [location]);
+
+  console.log({
+    newLocation: location.pathname,
+    actual: {
+      pubkey,
+      endpoint,
+      endpointName,
+      connected,
+      isOwner: storefront.pubkey === pubkey
+    },
+    analytics: {
+      analyticsInitialized,
+      analyticsUserId,
+      network
+    }
+  })
+  // basic "sign in / out check"
+  if(pubkey !== analyticsUserId) {
+    setAnalyticsUserId(pubkey, pubkey === storefront.pubkey)
+  }
+  if(endpointName && endpointName !== network) {
+    setNetwork(endpointName)
+  }
 
   return <></>;
 };

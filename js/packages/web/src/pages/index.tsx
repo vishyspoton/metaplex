@@ -45,7 +45,7 @@ export async function getServerSideProps(context: NextPageContext) {
     return { props: { storefront } };
   }
 
-  return { // should we wrap this in props? ({props: {notFound: true}})
+  return {
     notFound: true,
   };
 }

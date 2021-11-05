@@ -625,9 +625,9 @@ export const AuctionCard = ({
                       );
                       setLastBid({ amount });
                       bidTxid = txid;
-                      track('instant_sale_completed', {
+                      track('instant_sale_canceled', {
                         category: 'auction',
-                        label: 'confirmed',
+                        label: 'canceled',
                         ...value && {
                           value: value * useSolPrice(), //Google Analytics likes this one in USD :)
                           sol_value: value

@@ -10,6 +10,7 @@ import { useStore } from '@oyster/common';
 import { useAuctionManagersToCache } from '../../hooks';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { track } from '../../utils/analytics';
+import { useCoingecko, useSolPrice } from '../../contexts';
 
 export enum LiveAuctionViewState {
   All = '0',
@@ -41,7 +42,7 @@ export const AuctionListView = () => {
   const isStoreOwner = ownerAddress === wallet.publicKey?.toBase58();
   const notAllAuctionsCached = auctionManagerTotal !== auctionCacheTotal;
   const showCacheAuctionsAlert = isStoreOwner && notAllAuctionsCached;
-
+  
   return (
     initLoading ? (
       <div className="app-section--loading">
@@ -86,7 +87,7 @@ export const AuctionListView = () => {
                     item_name: i.metadata.info.data.name,
                     affiliation: storefront.subdomain, // or page title?
                     currency: 'USD',
-                    price: i.amount.toNumber() * 244, // 244 is sol price,
+                    price: i.amount.toNumber() * useSolPrice(),
                     sol_value: i.amount.toNumber(),
                     index: j,
                     quantity: 1
