@@ -49,7 +49,7 @@ export function setNetwork(n: string) {
 }
 
 export function configureAnalytics(options: Partial<AnalyticsOptions>) {
-  console.log('analytics configured');
+  console.log('analytics configured', options);
   if (!window['gtag']) return;
   window['gtag']('config', GOOGLE_ANALYTICS_ID, {
     ...options,

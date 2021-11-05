@@ -23,7 +23,7 @@ interface RoutesProps {
 }
 
 const Analytics = ({ storefront }: RoutesProps) => {
-  const { publicKey } = useWallet();
+  const { publicKey, connected } = useWallet();
   const pubkey = publicKey?.toBase58() || '';
   const {endpoint} =useConnectionConfig();
   const endpointName = ENDPOINTS.find(e => e.endpoint === endpoint)?.name
@@ -32,16 +32,30 @@ const Analytics = ({ storefront }: RoutesProps) => {
     initializeAnalytics({subdomain: storefront.subdomain, storefront_pubkey: storefront.pubkey,})
   }
   
-  // basic "sign in / out check"
-  if(pubkey !== analyticsUserId) {
-    setAnalyticsUserId(pubkey)
-  }
-  if(endpointName && endpointName !== network) {
-    setNetwork(endpointName)
-  }
-
+  
   const location = useLocation();
   useEffect(() => {
+    console.log({
+      newLocation: location.pathname,
+      actual: {
+        pubkey,
+        endpoint,
+        endpointName,
+        connected
+      },
+      analytics: {
+        analyticsInitialized,
+        analyticsUserId,
+        network
+      }
+    })
+    // basic "sign in / out check"
+    if(pubkey !== analyticsUserId) {
+      setAnalyticsUserId(pubkey)
+    }
+    if(endpointName && endpointName !== network) {
+      setNetwork(endpointName)
+    }
     pageview(location.pathname)
   }, [location]);
 
@@ -52,8 +66,8 @@ export function Routes({ storefront }: RoutesProps) {
   return (
     <>
       <HashRouter basename={'/'}>
-        <Analytics storefront={storefront} />
         <Providers storefront={storefront}>
+          <Analytics storefront={storefront} />
           <Switch>
             <Route exact path="/admin" component={() => <AdminView />} />
             <Route
