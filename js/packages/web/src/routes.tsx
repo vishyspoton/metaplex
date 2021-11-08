@@ -1,5 +1,5 @@
 import { HashRouter, Route, Switch } from 'react-router-dom';
-import { ENDPOINTS, Storefront, useConnection, useConnectionConfig } from '@oyster/common';
+import { Storefront } from '@oyster/common';
 import { Providers } from './providers';
 import {
   ArtCreateView,
@@ -12,64 +12,15 @@ import {
 } from './views';
 import { AdminView } from './views/admin';
 import { BillingView } from './views/auction/billing';
-
-import { useLocation } from 'react-router';
-import { useEffect } from 'react';
-import { analyticsInitialized, analyticsUserId, initializeAnalytics, network, pageview, setAnalyticsUserId, setNetwork } from './utils/analytics';
-import { useWallet } from '@solana/wallet-adapter-react';
-
 interface RoutesProps {
   storefront: Storefront;
 }
-
-const Analytics = ({ storefront }: RoutesProps) => {
-  const { publicKey, connected } = useWallet();
-  const pubkey = publicKey?.toBase58() || '';
-  const {endpoint} =useConnectionConfig();
-  const endpointName = ENDPOINTS.find(e => e.endpoint === endpoint)?.name
-
-  if(!analyticsInitialized) {
-    initializeAnalytics({subdomain: storefront.subdomain, storefront_pubkey: storefront.pubkey,})
-  }
-  
-  
-  const location = useLocation();
-  useEffect(() => {
-    pageview(location.pathname)
-  }, [location]);
-
-  console.log({
-    newLocation: location.pathname,
-    actual: {
-      pubkey,
-      endpoint,
-      endpointName,
-      connected,
-      isOwner: storefront.pubkey === pubkey
-    },
-    analytics: {
-      analyticsInitialized,
-      analyticsUserId,
-      network
-    }
-  })
-  // basic "sign in / out check"
-  if(pubkey !== analyticsUserId) {
-    setAnalyticsUserId(pubkey, pubkey === storefront.pubkey)
-  }
-  if(endpointName && endpointName !== network) {
-    setNetwork(endpointName)
-  }
-
-  return <></>;
-};
 
 export function Routes({ storefront }: RoutesProps) {
   return (
     <>
       <HashRouter basename={'/'}>
         <Providers storefront={storefront}>
-          <Analytics storefront={storefront} />
           <Switch>
             <Route exact path="/admin" component={() => <AdminView />} />
             <Route

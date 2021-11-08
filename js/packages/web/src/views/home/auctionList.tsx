@@ -9,8 +9,8 @@ import { useInfiniteScrollAuctions, } from '../../hooks';
 import { useStore } from '@oyster/common';
 import { useAuctionManagersToCache } from '../../hooks';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { track } from '../../utils/analytics';
-import { useCoingecko, useSolPrice } from '../../contexts';
+import { useSolPrice } from '../../contexts';
+import { useAnalytics } from '../../components/Analytics';
 
 export enum LiveAuctionViewState {
   All = '0',
@@ -40,6 +40,7 @@ export const AuctionListView = () => {
   const wallet = useWallet();
   const { auctionManagerTotal, auctionCacheTotal } = useAuctionManagersToCache();
   const isStoreOwner = ownerAddress === wallet.publicKey?.toBase58();
+  const {track} = useAnalytics()
   const notAllAuctionsCached = auctionManagerTotal !== auctionCacheTotal;
   const showCacheAuctionsAlert = isStoreOwner && notAllAuctionsCached;
   

@@ -46,7 +46,6 @@ export function CoingeckoProvider({ children = null as any }) {
 }
 
 export const useCoingecko = () => {
-  // got a lint saying this breaks the rule of hooks
   const context = useContext(CoingeckoContext);
   return context as CoingeckoContextState;
 };

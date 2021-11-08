@@ -52,7 +52,7 @@ import { LoadingOutlined } from '@ant-design/icons';
 import { useActionButtonContent } from './hooks/useActionButtonContent';
 import { endSale } from './utils/endSale';
 import { useInstantSaleState } from './hooks/useInstantSaleState';
-import { track } from '../../utils/analytics';
+import { useAnalytics } from '../Analytics';
 
 async function calculateTotalCostOfRedeemingOtherPeoplesBids(
   connection: Connection,
@@ -219,6 +219,7 @@ export const AuctionCard = ({
   const [modalHistory, setModalHistory] = useState<any>();
   const [showWarningModal, setShowWarningModal] = useState<boolean>(false);
   const [printingCost, setPrintingCost] = useState<number>();
+  const {track} = useAnalytics()
 
   const { accountByMint } = useUserAccounts();
 

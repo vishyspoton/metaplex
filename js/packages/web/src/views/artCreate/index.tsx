@@ -43,8 +43,9 @@ import { AmountLabel } from '../../components/AmountLabel';
 import useWindowDimensions from '../../utils/layout';
 import { LoadingOutlined, MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { RcFile } from 'antd/lib/upload';
-import { track } from '../../utils/analytics';
+
 import { useSolPrice } from '../../contexts';
+import { useAnalytics } from '../../components/Analytics';
 
 const { Step } = Steps;
 const { Dragger } = Upload;
@@ -117,6 +118,8 @@ export const ArtCreateView = () => {
     setStepsVisible(false);
     setMinting(true)
     setAlertMessage(undefined);
+
+    const {track} = useAnalytics()
 
     try {
       const _nft = await mintNFT(
