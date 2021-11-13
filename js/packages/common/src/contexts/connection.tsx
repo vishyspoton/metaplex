@@ -12,6 +12,7 @@ import {
   FeeCalculator,
   Keypair,
   RpcResponseAndContext,
+  sendAndConfirmRawTransaction,
   SignatureStatus,
   SimulatedTransactionResponse,
   Transaction,
@@ -86,7 +87,7 @@ interface ConnectionConfig {
 
 const ConnectionContext = React.createContext<ConnectionConfig>({
   endpoint: DEFAULT,
-  setEndpoint: () => {},
+  setEndpoint: () => { },
   connection: new Connection(DEFAULT, 'recent'),
   env: ENDPOINTS[0].name,
   tokens: [],
@@ -126,7 +127,7 @@ export function ConnectionProvider({
         .excludeByTag('nft')
         .filterByChainId(
           ENDPOINTS.find(end => end.endpoint === endpoint)?.ChainId ||
-            ChainId.MainnetBeta,
+          ChainId.MainnetBeta,
         )
         .getList();
 
@@ -146,7 +147,7 @@ export function ConnectionProvider({
   useEffect(() => {
     const id = connection.onAccountChange(
       Keypair.generate().publicKey,
-      () => {},
+      () => { },
     );
     return () => {
       connection.removeAccountChangeListener(id);
@@ -296,7 +297,7 @@ export const sendTransactions = async (
   signersSet: Keypair[][],
   sequenceType: SequenceType = SequenceType.Parallel,
   commitment: Commitment = 'singleGossip',
-  successCallback: (txid: string, ind: number) => void = () => {},
+  successCallback: (txid: string, ind: number) => void = () => { },
   failCallback: (reason: string, ind: number) => boolean = () => false,
   block?: BlockhashAndFeeCalculator,
 ): Promise<number> => {
@@ -473,7 +474,7 @@ export const sendTransactionWithRetry = async (
   includesFeePayer: boolean = false,
   block?: BlockhashAndFeeCalculator,
   beforeSend?: () => void,
-):Promise<{ txid: string, slot: number }> => {
+): Promise<{ txid: string, slot: number }> => {
   if (!wallet.publicKey) throw new WalletNotConnectedError();
 
   let transaction = new Transaction();
@@ -532,13 +533,14 @@ export async function sendSignedTransaction({
   const rawTransaction = signedTransaction.serialize();
   const startTime = getUnixTs();
   let slot = 0;
-  const txid: TransactionSignature = await connection.sendRawTransaction(
+  const txid: TransactionSignature = await sendAndConfirmRawTransaction(
+    connection,
     rawTransaction,
     {
       skipPreflight: true,
-    },
-  );
-
+      commitment: 'confirmed'
+    }
+  )
   console.log('Started awaiting confirmation for', txid);
 
   let done = false;
@@ -547,7 +549,7 @@ export async function sendSignedTransaction({
       connection.sendRawTransaction(rawTransaction, {
         skipPreflight: true,
       });
-      await sleep(500);
+      await sleep(1000);
     }
   })();
   try {
