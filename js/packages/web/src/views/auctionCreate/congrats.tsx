@@ -2,6 +2,7 @@ import { ArrowButton, StringPublicKey } from '@oyster/common';
 import { Space } from 'antd';
 import React from 'react';
 import { useHistory } from 'react-router-dom';
+import { useAnalytics } from '../../components/Analytics';
 import { Confetti } from '../../components/Confetti';
 
 export const Congrats = (props: {
@@ -12,6 +13,7 @@ export const Congrats = (props: {
   };
 }) => {
   const history = useHistory();
+  const { track } = useAnalytics();
 
   const newTweetURL = () => {
     const params = {
@@ -35,7 +37,14 @@ export const Congrats = (props: {
           className="metaplex-fullwidth"
           size="large"
           type="primary"
-          onClick={() => window.open(newTweetURL(), '_blank')}
+          onClick={() => {
+            track('share', {
+              method: 'Twitter',
+              content_type: 'auction',
+              item_id: props.auction?.auction.toString(),
+            });
+            window.open(newTweetURL(), '_blank');
+          }}
         >
           Share it on Twitter
         </ArrowButton>

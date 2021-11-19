@@ -42,27 +42,36 @@ export function AnalyticsProvider(props: { children: React.ReactNode }) {
   // user pubkey / id
   const pubkey = publicKey?.toBase58() || '';
   const endpointName = ENDPOINTS.find(e => e.endpoint === endpoint)?.name;
-  useEffect(() => {
-    // const isStoreOwner = ownerAddress === publicKey?.toBase58();
 
+  // runs everytime pubkey changes (wallet connect / disconnect) or endpoint is changed (devnet / mainnet)
+  useEffect(() => {
     setUserProperties({
       user_id: pubkey,
       pubkey: pubkey,
     });
 
-    // initial config
-    configureAnalytics({
-      is_store_owner: pubkey === storefront.pubkey, // isStoreOwner,
+    const storeConfig = {
+      is_store_owner: pubkey === storefront.pubkey,
       network: endpointName,
       store_domain: storefront.subdomain,
       store_title: storefront.meta.title,
       storefront_pubkey: storefront.pubkey,
-    });
+    };
+    configureAnalytics(storeConfig);
+
+    // if STORE_SPECIFIC_GA4_ID detected,
+    if (process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID_FOR_STORE) {
+      // setup same config for Store Owners automatically
+      configureAnalytics(
+        storeConfig,
+        process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID_FOR_STORE,
+      );
+    }
   }, [pubkey, endpointName]);
 
   useEffect(() => {
     pageview(location.pathname);
-  }, [location]);
+  }, [location.pathname]);
 
   function setUserProperties(attributes: AnalyticsUserProperties) {
     gtag('set', 'user_properties', {
@@ -70,9 +79,14 @@ export function AnalyticsProvider(props: { children: React.ReactNode }) {
     });
   }
 
-  function configureAnalytics(options: Partial<CustomEventDimensions>) {
+  function configureAnalytics(
+    options: Partial<CustomEventDimensions> & {
+      groups?: 'all' | 'holaplex' | 'store_owner';
+    },
+    googleAnalyticsId: string = GOOGLE_ANALYTICS_ID,
+  ) {
     if (!gtag) return;
-    gtag('config', GOOGLE_ANALYTICS_ID, {
+    gtag('config', googleAnalyticsId, {
       ...options,
       send_page_view: false,
     });
@@ -80,8 +94,16 @@ export function AnalyticsProvider(props: { children: React.ReactNode }) {
 
   function pageview(path: string) {
     if (!gtag) return;
-    gtag('event', 'page_view', {
-      page_location: window.location.href, // important to overwrite to keep fragments
+    // gtag('event', 'page_view', {
+    //   page_location: window.location.href, // important to overwrite to keep fragments
+    //   page_path: path, // React router provides the # route as a regular path
+    //   send_to: [GOOGLE_ANALYTICS_ID].concat(
+    //     process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID_FOR_STORE
+    //       ? [process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID_FOR_STORE]
+    //       : [],
+    //   ),
+    // });
+    track('page_view', {
       page_path: path, // React router provides the # route as a regular path
     });
   }
@@ -98,6 +120,15 @@ export function AnalyticsProvider(props: { children: React.ReactNode }) {
   ) {
     if (!gtag) return;
     gtag('event', action, {
+      send_to: [GOOGLE_ANALYTICS_ID].concat(
+        process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID_FOR_STORE
+          ? [process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID_FOR_STORE]
+          : [],
+      ),
+      // Same as Pageview
+      page_location: window.location.href, // important to overwrite to keep fragments
+      // page_path: path, // React router provides the # route as a regular path
+      // Event specific
       event_category: attributes?.category,
       event_label: attributes?.label,
       ...(attributes?.sol_value && solPrice

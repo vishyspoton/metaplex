@@ -19,7 +19,17 @@ import { MintInfo } from '@solana/spl-token';
 import { Link } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Connection } from '@solana/web3.js';
-import { Button, Carousel, Col, List, Row, Skeleton, Space, Spin, Typography } from 'antd';
+import {
+  Button,
+  Carousel,
+  Col,
+  List,
+  Row,
+  Skeleton,
+  Space,
+  Spin,
+  Typography,
+} from 'antd';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { format } from 'timeago.js';
@@ -39,6 +49,7 @@ import {
 } from '../../hooks';
 import { ArtType } from '../../types';
 import useWindowDimensions from '../../utils/layout';
+import { useAnalytics } from '../../components/Analytics';
 
 const { Text } = Typography;
 
@@ -61,6 +72,8 @@ export const AuctionView = () => {
   const { ref, data } = useExtendedArt(auction?.thumbnail.metadata.pubkey);
   const creators = useCreators(auction);
   const wallet = useWallet();
+  const { track } = useAnalytics();
+
   let edition = '';
   if (art.type === ArtType.NFT) {
     edition = 'Unique';
@@ -106,7 +119,7 @@ export const AuctionView = () => {
       />
     );
   });
-  
+
   return (
     <Row justify="center" ref={ref} gutter={[48, 0]}>
       <Col span={24} md={{ span: 20 }} lg={9}>
@@ -122,8 +135,33 @@ export const AuctionView = () => {
           <p>
             {hasDescription && <Skeleton paragraph={{ rows: 3 }} />}
             {description ||
-              (winnerCount !== undefined && <div>No description provided.</div>)}
+              (winnerCount !== undefined && (
+                <div>No description provided.</div>
+              ))}
           </p>
+          <Button
+            onClick={() => {
+              const params = {
+                text: "I've listed an NFT on my @Holaplex store, check it out!",
+                url: `${
+                  window.location.origin
+                }/#/auction/${auction?.auction.pubkey.toString()}`,
+                hashtags: 'NFT,Crypto,Metaplex',
+                // via: "Metaplex",
+                related: 'Metaplex,Solana',
+              };
+              const queryParams = new URLSearchParams(params).toString();
+              const newTweetURL = `https://twitter.com/intent/tweet?${queryParams}`;
+              track('share', {
+                method: 'Twitter',
+                content_type: 'auction',
+                item_id: auction?.auction.pubkey.toString(),
+              });
+              window.open(newTweetURL, '_blank');
+            }}
+          >
+            Share auction
+          </Button>
         </Space>
         {attributes && (
           <div>
@@ -145,11 +183,10 @@ export const AuctionView = () => {
       <Col span={24} lg={{ offset: 1, span: 13 }}>
         <Row justify="space-between">
           <h2>{art.title || <Skeleton paragraph={{ rows: 0 }} />}</h2>
-          {wallet.publicKey?.toBase58() === auction?.auctionManager.authority && (
+          {wallet.publicKey?.toBase58() ===
+            auction?.auctionManager.authority && (
             <Link to={`/auction/${id}/billing`}>
-              <Button type="ghost">
-                Billing
-              </Button>
+              <Button type="ghost">Billing</Button>
             </Link>
           )}
         </Row>
