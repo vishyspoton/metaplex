@@ -56,6 +56,8 @@ export const getStorefront = async (
     return {
       subdomain,
       pubkey: values['solana:pubkey'],
+      // TODO: lookup from arweave
+      revenueShare: true,
       theme: {
         logo: maybeCDN(values['holaplex:theme:logo:url']),
         banner: maybeCDN(values['holaplex:theme:banner:url'] || ''),

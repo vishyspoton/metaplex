@@ -1,5 +1,6 @@
 const withPlugins = require('next-compose-plugins');
 const withLess = require('next-with-less');
+const withImages = require('next-images');
 
 const assetPrefix = process.env.ASSET_PREFIX || '';
 
@@ -18,6 +19,10 @@ const plugins = [
       },
     },
   ],
+  [
+    withImages,
+    {}
+  ]
 ];
 
 module.exports = withPlugins(plugins, {
@@ -29,6 +34,7 @@ module.exports = withPlugins(plugins, {
   productionBrowserSourceMaps: true,
   env: {
     NEXT_PUBLIC_BUGSNAG_API_KEY: process.env.BUGSNAG_API_KEY,
+    NEXT_PUBLIC_HOLAPLEX_HOLDER_PUBKEY: process.env.NEXT_PUBLIC_HOLAPLEX_HOLDER_PUBKEY,
     NEXT_PUBLIC_ARWEAVE_CDN:
       process.env.ARWEAVE_CDN || 'https://arweave.cache.holaplex.dev',
     NEXT_PUBLIC_STORE_OWNER_ADDRESS:

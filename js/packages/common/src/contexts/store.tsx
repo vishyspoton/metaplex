@@ -34,6 +34,7 @@ export interface Storefront {
   subdomain: string;
   meta: StorefrontMeta;
   theme: StorefrontTheme;
+  revenueShare: boolean;
 }
 
 export interface StorefrontConfig {

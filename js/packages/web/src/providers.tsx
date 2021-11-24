@@ -4,6 +4,7 @@ import {
   StoreProvider,
   WalletProvider,
   MetaProvider,
+  HolaplexProvider
 } from '@oyster/common';
 import React, { FC } from 'react';
 import { ConfettiProvider } from './components/Confetti';
@@ -21,26 +22,30 @@ interface ProvidersProps {
 export const Providers: FC<ProvidersProps> = ({ children, storefront }) => {
   return (
     <ConnectionProvider>
-      <StoreProvider
-        storefront={storefront}
-        storeAddress={process.env.NEXT_PUBLIC_STORE_ADDRESS}
+      <HolaplexProvider
+        address={process.env.NEXT_PUBLIC_HOLAPLEX_HOLDER_PUBKEY}
       >
-        <WalletProvider>
-          <AccountsProvider>
-            <CoingeckoProvider>
-              <MetaProvider>
-                <LoaderProvider>
-                  <ConfettiProvider>
-                    <AnalyticsProvider>
-                      <AppLayout storefront={storefront}>{children}</AppLayout>
-                    </AnalyticsProvider>
-                  </ConfettiProvider>
-                </LoaderProvider>
-              </MetaProvider>
-            </CoingeckoProvider>
-          </AccountsProvider>
-        </WalletProvider>
-      </StoreProvider>
-    </ConnectionProvider>
+        <StoreProvider
+          storefront={storefront}
+          storeAddress={process.env.NEXT_PUBLIC_STORE_ADDRESS}
+        >
+          <WalletProvider>
+            <AccountsProvider>
+              <CoingeckoProvider>
+                <MetaProvider>
+                  <LoaderProvider>
+                    <ConfettiProvider>
+                      <AnalyticsProvider>
+                        <AppLayout storefront={storefront}>{children}</AppLayout>
+                      </AnalyticsProvider>
+                    </ConfettiProvider>
+                  </LoaderProvider>
+                </MetaProvider>
+              </CoingeckoProvider>
+            </AccountsProvider>
+          </WalletProvider>
+        </StoreProvider>
+      </HolaplexProvider>
+    </ConnectionProvider >
   );
 };
