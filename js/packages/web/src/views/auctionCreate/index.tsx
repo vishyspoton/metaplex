@@ -525,6 +525,7 @@ export const AuctionCreateView = () => {
       track('new_listing', {
         category: 'creation',
         label: isInstantSale ? 'instant sale' : 'auction',
+        listing_id: auctionInfo.auction
         // sol_value: isInstantSale
         //   ? auctionSettings.instantSalePrice?.toNumber() // this price is like 100x the real sol price. Is it in lamports?
         //   : auctionSettings.priceFloor.minPrice?.toNumber(),

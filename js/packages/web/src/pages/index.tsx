@@ -113,7 +113,7 @@ function AppWrapper({ storefront }: AppProps) {
         />
         <meta
           property="og:image"
-          content={storefront.theme.logo}
+          content={storefront.theme.banner || storefront.theme.logo}
           key="og:image"
         />
         <meta property="og:type" content="website" key="og:type" />

@@ -41,7 +41,7 @@ export const Congrats = (props: {
             track('share', {
               method: 'Twitter',
               content_type: 'auction',
-              item_id: props.auction?.auction.toString(),
+              listing_id: props.auction?.auction.toString(),
             });
             window.open(newTweetURL(), '_blank');
           }}

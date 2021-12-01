@@ -44,6 +44,10 @@ export function AnalyticsProvider(props: { children: React.ReactNode }) {
   const pubkey = publicKey?.toBase58() || '';
   const endpointName = ENDPOINTS.find(e => e.endpoint === endpoint)?.name;
 
+  const storefrontGA4Id =
+    storefront.integrations?.ga4 ||
+    process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID_FOR_STORE;
+
   // runs everytime pubkey changes (wallet connect / disconnect) or endpoint is changed (devnet / mainnet)
   useEffect(() => {
     setUserProperties({
@@ -61,12 +65,9 @@ export function AnalyticsProvider(props: { children: React.ReactNode }) {
     configureAnalytics(storeConfig);
 
     // if STORE_SPECIFIC_GA4_ID detected,
-    if (process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID_FOR_STORE) {
+    if (storefrontGA4Id) {
       // setup same config for Store Owners automatically
-      configureAnalytics(
-        storeConfig,
-        process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID_FOR_STORE,
-      );
+      configureAnalytics(storeConfig, storefrontGA4Id);
     }
   }, [pubkey, endpointName]);
 
@@ -96,7 +97,7 @@ export function AnalyticsProvider(props: { children: React.ReactNode }) {
   function pageview(path: string) {
     if (!gtag) return;
     track('page_view', {
-      page_path: path, // React router provides the # route as a regular path
+      path: path, // React router provides the # route as a regular path
     });
   }
 
@@ -114,11 +115,20 @@ export function AnalyticsProvider(props: { children: React.ReactNode }) {
     const { category, label, sol_value, value, ...otherAttributes } =
       attributes;
 
+    console.log(
+      'dev track',
+      action,
+      {
+        send_to: [GOOGLE_ANALYTICS_ID].concat(
+          storefrontGA4Id ? [storefrontGA4Id] : [],
+        ),
+      },
+      attributes,
+    );
+
     gtag('event', action, {
       send_to: [GOOGLE_ANALYTICS_ID].concat(
-        process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID_FOR_STORE
-          ? [process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID_FOR_STORE]
-          : [],
+        storefrontGA4Id ? [storefrontGA4Id] : [],
       ),
       page_location: window.location.href, // important to overwrite to keep fragments
       // Event specific

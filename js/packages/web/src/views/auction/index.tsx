@@ -92,6 +92,7 @@ export const AuctionView = () => {
     edition = `${art.edition} of ${art.supply}`;
   }
   const nftCount = auction?.items.flat().length;
+  console.log('nfts', auction?.items);
   const winnerCount = auction?.items.length;
 
   const hasDescription = data === undefined || data.description === undefined;
@@ -183,7 +184,10 @@ export const AuctionView = () => {
               track('share', {
                 method: 'Twitter',
                 content_type: 'auction',
-                item_id: auction?.auction.pubkey.toString(),
+                listing_id: id,
+                // nft_id: auction?.items.find(
+                //   nft => nft[0].masterEdition?.pubkey,
+                // ),
               });
               window.open(newTweetURL, '_blank');
             }}
