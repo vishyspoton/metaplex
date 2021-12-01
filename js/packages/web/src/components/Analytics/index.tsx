@@ -3,6 +3,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { ENDPOINTS, useConnectionConfig, useStore } from '@oyster/common';
 import { useLocation } from 'react-router';
 import { useSolPrice } from '../../contexts';
+import { Gtag } from './gtag.interface';
 
 export const GOOGLE_ANALYTICS_ID =
   process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID || 'G-HLNC4C2YKN';
@@ -30,7 +31,7 @@ const AnalyticsContext = React.createContext<{
 } | null>(null);
 
 // @ts-ignore
-const gtag = window.gtag;
+const gtag = window.gtag as Gtag;
 
 export function AnalyticsProvider(props: { children: React.ReactNode }) {
   const { publicKey } = useWallet();
@@ -94,15 +95,6 @@ export function AnalyticsProvider(props: { children: React.ReactNode }) {
 
   function pageview(path: string) {
     if (!gtag) return;
-    // gtag('event', 'page_view', {
-    //   page_location: window.location.href, // important to overwrite to keep fragments
-    //   page_path: path, // React router provides the # route as a regular path
-    //   send_to: [GOOGLE_ANALYTICS_ID].concat(
-    //     process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID_FOR_STORE
-    //       ? [process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID_FOR_STORE]
-    //       : [],
-    //   ),
-    // });
     track('page_view', {
       page_path: path, // React router provides the # route as a regular path
     });
@@ -110,36 +102,38 @@ export function AnalyticsProvider(props: { children: React.ReactNode }) {
 
   function track(
     action: string,
-    attributes?: {
+    attributes: {
       category?: string;
       label?: string;
       value?: number;
       sol_value?: number;
       [key: string]: string | number | undefined;
-    } & Partial<CustomEventDimensions>,
+    } & Partial<CustomEventDimensions> = {},
   ) {
     if (!gtag) return;
+    const { category, label, sol_value, value, ...otherAttributes } =
+      attributes;
+
     gtag('event', action, {
       send_to: [GOOGLE_ANALYTICS_ID].concat(
         process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID_FOR_STORE
           ? [process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID_FOR_STORE]
           : [],
       ),
-      // Same as Pageview
       page_location: window.location.href, // important to overwrite to keep fragments
-      // page_path: path, // React router provides the # route as a regular path
       // Event specific
-      event_category: attributes?.category,
-      event_label: attributes?.label,
-      ...(attributes?.sol_value && solPrice
+      event_category: category,
+      event_label: label,
+      ...(sol_value && solPrice
         ? {
-            value: attributes.sol_value * solPrice, //Google Analytics likes this one in USD :)
+            value: sol_value * solPrice, //Google Analytics likes this one in USD :)
             sol_value: attributes.sol_value,
+            sol_value_dimension: attributes.sol_value,
           }
         : {
-            value: attributes?.value,
+            value,
           }),
-      ...attributes,
+      ...otherAttributes,
     });
   }
 
