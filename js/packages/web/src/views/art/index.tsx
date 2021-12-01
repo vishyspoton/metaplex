@@ -6,7 +6,17 @@ import {
   loadMultipleAccounts,
 } from '@oyster/common';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { Button, Col, Divider, List, Row, Skeleton, Space, Tag, Typography } from 'antd';
+import {
+  Button,
+  Col,
+  Divider,
+  List,
+  Row,
+  Skeleton,
+  Space,
+  Tag,
+  Typography,
+} from 'antd';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { sendSignMetadata } from '../../actions/sendSignMetadata';
@@ -125,20 +135,28 @@ export const ArtView = () => {
                               setValidating(true);
 
                               try {
-                                const txid = await sendSignMetadata(connection, wallet, id);
+                                const txid = await sendSignMetadata(
+                                  connection,
+                                  wallet,
+                                  id,
+                                );
 
-                                const tx = await connection.getTransaction(txid, {
-                                  commitment: 'confirmed',
-                                });
+                                const tx = await connection.getTransaction(
+                                  txid,
+                                  {
+                                    commitment: 'confirmed',
+                                  },
+                                );
 
-                                const keys = tx?.transaction.message.accountKeys || [];
+                                const keys =
+                                  tx?.transaction.message.accountKeys || [];
 
                                 const patch = await loadMultipleAccounts(
                                   connection,
                                   keys.map(k => k.toBase58()),
                                   'confirmed',
                                 );
-                                
+
                                 patchState(patch);
                               } catch (e) {
                                 console.error(e);
@@ -228,8 +246,11 @@ export const ArtView = () => {
                 return (
                   <List.Item key={i}>
                     <List.Item.Meta
-                      title={<Text type="secondary"> {attribute.trait_type} </Text>}
-                      description={<Text> {attribute.value} </Text>} />
+                      title={
+                        <Text type="secondary"> {attribute.trait_type} </Text>
+                      }
+                      description={<Text> {attribute.value} </Text>}
+                    />
                   </List.Item>
                 );
               })}

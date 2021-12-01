@@ -93,7 +93,8 @@ export const RoyaltiesStep = (props: {
   const [totalRoyaltyShares, setTotalRoyaltiesShare] = useState<number>(0);
   const [showCreatorsModal, setShowCreatorsModal] = useState<boolean>(false);
   const [isShowErrors, setIsShowErrors] = useState<boolean>(false);
-  const [sellerFeeBasisPoints, setSellerFeeBasisPoints] = useState<number>(1000);
+  const [sellerFeeBasisPoints, setSellerFeeBasisPoints] =
+    useState<number>(1000);
 
   useEffect(() => {
     if (publicKey) {
@@ -128,8 +129,8 @@ export const RoyaltiesStep = (props: {
   useEffect(() => {
     props.setAttributes({
       ...props.attributes,
-      seller_fee_basis_points: sellerFeeBasisPoints
-    })
+      seller_fee_basis_points: sellerFeeBasisPoints,
+    });
   }, [sellerFeeBasisPoints]);
 
   return (

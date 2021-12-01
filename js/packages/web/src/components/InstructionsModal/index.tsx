@@ -65,7 +65,12 @@ export const InstructionsModal: React.FC<ModalProps> = ({
 
   return (
     <>
-      <Button block={buttonBlock} type={buttonType} size={buttonSize} onClick={showModal}>
+      <Button
+        block={buttonBlock}
+        type={buttonType}
+        size={buttonSize}
+        onClick={showModal}
+      >
         {buttonText}
       </Button>
       <Modal

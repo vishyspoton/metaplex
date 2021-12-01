@@ -75,14 +75,10 @@ export const AdminView = () => {
   }, [store, storeAddress, wallet.publicKey]);
 
   useEffect(() => {
-    return subscribeProgramChanges(
-      connection,
-      patchState,
-      {
-        programId: METAPLEX_ID,
-        processAccount: processMetaplexAccounts,
-      },
-    );
+    return subscribeProgramChanges(connection, patchState, {
+      programId: METAPLEX_ID,
+      processAccount: processMetaplexAccounts,
+    });
   }, [connection]);
 
   useEffect(() => {

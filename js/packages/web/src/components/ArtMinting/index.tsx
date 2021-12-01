@@ -46,7 +46,7 @@ export const ArtMinting = ({ id, onMint }: ArtMintingProps) => {
       0) > 0;
   const isMasterEditionV1 = artMintTokenAccount
     ? decodeMasterEdition(artMintTokenAccount.account.data).key ===
-    MetadataKey.MasterEditionV1
+      MetadataKey.MasterEditionV1
     : false;
   const renderMintEdition =
     isArtMasterEdition &&
@@ -161,9 +161,7 @@ export const ArtMinting = ({ id, onMint }: ArtMintingProps) => {
             onOk={mint}
             onCancel={() => setShowMintModal(false)}
           >
-            <Form
-              layout="vertical"
-            >
+            <Form layout="vertical">
               <Form.Item
                 label={<h3>Mint to</h3>}
                 labelAlign="left"

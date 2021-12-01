@@ -36,7 +36,7 @@ import {
   processAuctions,
   VAULT_ID,
   processVaultData,
-  subscribeProgramChanges
+  subscribeProgramChanges,
 } from '@oyster/common';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useMeta } from '../../contexts';
@@ -66,14 +66,10 @@ export const BillingView = () => {
   }, [loadingBilling]);
 
   useEffect(() => {
-    return subscribeProgramChanges(
-      connection,
-      patchState,
-      {
-        programId: METAPLEX_ID,
-        processAccount: processMetaplexAccounts,
-      },
-    );
+    return subscribeProgramChanges(connection, patchState, {
+      programId: METAPLEX_ID,
+      processAccount: processMetaplexAccounts,
+    });
   }, [connection]);
 
   return loading ||

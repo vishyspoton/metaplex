@@ -48,7 +48,9 @@ export const ArtworksView = () => {
       <Row justify="space-between" align="middle">
         <h2>Owned Artwork</h2>
         <Link to="/auction/create/0">
-          <Button size="large" type="primary">Sell NFT</Button>
+          <Button size="large" type="primary">
+            Sell NFT
+          </Button>
         </Link>
       </Row>
       <Row>

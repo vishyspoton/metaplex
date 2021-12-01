@@ -135,7 +135,7 @@ export const AuctionCreateView = () => {
   const mint = useMint(QUOTE_MINT);
   const { width } = useWindowDimensions();
   const [percentComplete, setPercentComplete] = useState(0);
-  const [rejection, setRejection] = useState<string>()
+  const [rejection, setRejection] = useState<string>();
   const [step, setStep] = useState<number>(1);
   const [stepsVisible, setStepsVisible] = useState<boolean>(true);
   const [auctionObj, setAuctionObj] = useState<
@@ -176,8 +176,8 @@ export const AuctionCreateView = () => {
       },
       {
         programId: VAULT_ID,
-        processAccount: processVaultData
-      }
+        processAccount: processVaultData,
+      },
     );
   }, [connection]);
 
@@ -193,7 +193,9 @@ export const AuctionCreateView = () => {
 
   const createAuction = async () => {
     let winnerLimit: WinnerLimit;
-    let auctionInfo: { vault: string, auction: string, auctionManager: string } | undefined;
+    let auctionInfo:
+      | { vault: string; auction: string; auctionManager: string }
+      | undefined;
 
     if (
       attributes.category === AuctionCategory.InstantSale &&
@@ -500,7 +502,7 @@ export const AuctionCreateView = () => {
     const participationSafetyDepositDraft = isOpenEdition
       ? attributes.items[0]
       : attributes.participationNFT;
-    
+
     try {
       auctionInfo = await createAuctionManager(
         connection,
@@ -517,11 +519,10 @@ export const AuctionCreateView = () => {
     } catch (e: any) {
       setRejection(e.message);
       Bugsnag.notify(e);
-      return;  
+      return;
     }
 
     try {
-
       track('new_listing', {
         category: 'creation',
         label: isInstantSale ? 'instant sale' : 'auction',

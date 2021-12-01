@@ -26,7 +26,17 @@ import { MintInfo } from '@solana/spl-token';
 import { Link } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Connection } from '@solana/web3.js';
-import { Button, Carousel, Col, List, Row, Skeleton, Space, Spin, Typography } from 'antd';
+import {
+  Button,
+  Carousel,
+  Col,
+  List,
+  Row,
+  Skeleton,
+  Space,
+  Spin,
+  Typography,
+} from 'antd';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { format } from 'timeago.js';
@@ -134,7 +144,7 @@ export const AuctionView = () => {
       />
     );
   });
-  
+
   return (
     <Row justify="center" ref={ref} gutter={[48, 0]}>
       <Col span={24} md={{ span: 20 }} lg={9}>
@@ -150,7 +160,9 @@ export const AuctionView = () => {
           <p>
             {hasDescription && <Skeleton paragraph={{ rows: 3 }} />}
             {description ||
-              (winnerCount !== undefined && <div>No description provided.</div>)}
+              (winnerCount !== undefined && (
+                <div>No description provided.</div>
+              ))}
           </p>
         </Space>
         {attributes && (
@@ -173,11 +185,10 @@ export const AuctionView = () => {
       <Col span={24} lg={{ offset: 1, span: 13 }}>
         <Row justify="space-between">
           <h2>{art.title || <Skeleton paragraph={{ rows: 0 }} />}</h2>
-          {wallet.publicKey?.toBase58() === auction?.auctionManager.authority && (
+          {wallet.publicKey?.toBase58() ===
+            auction?.auctionManager.authority && (
             <Link to={`/auction/${id}/billing`}>
-              <Button type="ghost">
-                Billing
-              </Button>
+              <Button type="ghost">Billing</Button>
             </Link>
           )}
         </Row>
