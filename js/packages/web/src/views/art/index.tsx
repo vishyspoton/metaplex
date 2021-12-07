@@ -4,6 +4,7 @@ import {
   useConnection,
   useMeta,
   loadMultipleAccounts,
+  loadMetadataForUser
 } from '@oyster/common';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Button, Col, Divider, List, Row, Skeleton, Space, Tag, Typography } from 'antd';
@@ -53,7 +54,13 @@ export const ArtView = () => {
         id,
       );
 
-      patchState(artState);
+      const metadataState = await loadMetadataForUser(
+        connection,
+        wallet.publicKey?.toBase58(),
+        whitelistedCreatorsByCreator,
+      );
+
+      patchState(artState, metadataState);
     })();
   }, [connection]);
 

@@ -1,11 +1,11 @@
 import BN from 'bn.js';
 import { Connection, Keypair, TransactionInstruction } from '@solana/web3.js';
+import { programs } from '@metaplex/js';
 import {
   sendTransactions,
   sendTransactionWithRetry,
   SequenceType,
   StringPublicKey,
-  TokenAccount,
 } from '@oyster/common';
 import { setupMintEditionIntoWalletInstructions } from './setupMintEditionIntoWalletInstructions';
 import { Art } from '../types';
@@ -20,7 +20,7 @@ export async function mintEditionsToWallet(
   art: Art,
   wallet: WalletContextState,
   connection: Connection,
-  mintTokenAccount: TokenAccount,
+  mintTokenAccount: programs.TokenAccount,
   editions: number = 1,
   mintDestination: StringPublicKey,
 ) {

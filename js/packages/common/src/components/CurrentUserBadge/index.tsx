@@ -12,7 +12,7 @@ export const CurrentUserBadge = (props: {
   iconSize?: number;
 }) => {
   const { wallet, publicKey } = useWallet();
-  const { account } = useNativeAccount();
+  // const { account } = useNativeAccount();
 
   if (!wallet || !publicKey) {
     return null;

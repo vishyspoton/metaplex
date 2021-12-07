@@ -11,6 +11,7 @@ import {
   SafetyDepositBox,
   Vault,
 } from '../../actions';
+import { programs } from '@metaplex/js';
 import {
   AuctionCache,
   AuctionManagerV1,
@@ -78,6 +79,7 @@ export interface MetaState {
   auctionCaches: Record<string, ParsedAccount<AuctionCache>>;
   storeIndexer: ParsedAccount<StoreIndexer>[];
   auctionCachesByAuctionManager: Record<string, ParsedAccount<AuctionCache>>;
+  accountsByMint: Record<string, programs.TokenAccount>;
 }
 
 export interface MetaContextState extends MetaState {

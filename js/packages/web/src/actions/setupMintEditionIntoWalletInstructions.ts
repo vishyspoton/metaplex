@@ -4,8 +4,8 @@ import BN from 'bn.js';
 import {
   mintNewEditionFromMasterEditionViaToken,
   StringPublicKey,
-  TokenAccount,
 } from '@oyster/common';
+import { programs } from '@metaplex/js';
 import { createMintAndAccountWithOne } from './createMintAndAccountWithOne';
 import { Art } from '../types';
 import { WalletContextState } from '@solana/wallet-adapter-react';
@@ -14,7 +14,7 @@ export async function setupMintEditionIntoWalletInstructions(
   art: Art,
   wallet: WalletContextState,
   connection: Connection,
-  mintTokenAccount: TokenAccount,
+  mintTokenAccount: programs.TokenAccount,
   edition: BN,
   instructions: any,
   signers: any,
@@ -30,8 +30,6 @@ export async function setupMintEditionIntoWalletInstructions(
   }
   const walletPubKey = wallet.publicKey.toString();
   const { mint: tokenMint } = art;
-  const { pubkey: mintTokenAccountPubKey } = mintTokenAccount;
-  const mintTokenAccountOwner = mintTokenAccount.info.owner.toString();
 
   const mintRentExempt = await connection.getMinimumBalanceForRentExemption(
     MintLayout.span,
@@ -49,8 +47,8 @@ export async function setupMintEditionIntoWalletInstructions(
     tokenMint,
     walletPubKey,
     walletPubKey,
-    mintTokenAccountOwner,
-    mintTokenAccountPubKey,
+    mintTokenAccount.data.owner.toBase58(),
+    mintTokenAccount.pubkey.toBase58(),
     instructions,
     walletPubKey,
     edition,

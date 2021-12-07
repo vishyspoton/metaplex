@@ -27,4 +27,5 @@ export const getEmptyMetaState = (): MetaState => ({
   auctionCaches: {},
   storeIndexer: [],
   auctionCachesByAuctionManager: {},
+  accountsByMint: {},
 });

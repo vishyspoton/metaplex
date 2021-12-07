@@ -26,7 +26,6 @@ export const Providers: FC<ProvidersProps> = ({ children, storefront }) => {
         storeAddress={process.env.NEXT_PUBLIC_STORE_ADDRESS}
       >
         <WalletProvider>
-          <AccountsProvider>
             <CoingeckoProvider>
               <MetaProvider>
                 <LoaderProvider>
@@ -38,7 +37,6 @@ export const Providers: FC<ProvidersProps> = ({ children, storefront }) => {
                 </LoaderProvider>
               </MetaProvider>
             </CoingeckoProvider>
-          </AccountsProvider>
         </WalletProvider>
       </StoreProvider>
     </ConnectionProvider>

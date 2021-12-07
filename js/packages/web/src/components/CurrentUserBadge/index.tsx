@@ -128,7 +128,7 @@ export const CurrentUserBadge = (props: {
   iconSize?: number;
 }) => {
   const { wallet, publicKey, disconnect } = useWallet();
-  const { account } = useNativeAccount();
+  // const { account } = useNativeAccount();
   const solPrice = useSolPrice();
 
   const [showAddFundsModal, setShowAddFundsModal] = useState<boolean>(false);
@@ -136,7 +136,7 @@ export const CurrentUserBadge = (props: {
   if (!wallet || !publicKey || !solPrice) {
     return null;
   }
-  const balance = (account?.lamports || 0) / LAMPORTS_PER_SOL;
+  const balance = (0) / LAMPORTS_PER_SOL;
   const balanceInUSD = balance * solPrice;
 
   let name = props.showAddress ? shortenAddress(`${publicKey}`) : '';
@@ -241,7 +241,7 @@ export const CurrentUserBadgeMobile = (props: {
   closeModal?: () => void;
 }) => {
   const { wallet, publicKey, disconnect } = useWallet();
-  const { account } = useNativeAccount();
+  // const { account } = useNativeAccount();
   const solPrice = useSolPrice();
 
   const [showAddFundsModal, setShowAddFundsModal] = useState<boolean>(false);
@@ -249,7 +249,7 @@ export const CurrentUserBadgeMobile = (props: {
   if (!wallet || !publicKey || !solPrice) {
     return null;
   }
-  const balance = (account?.lamports || 0) / LAMPORTS_PER_SOL;
+  const balance = (0) / LAMPORTS_PER_SOL;
   const balanceInUSD = balance * solPrice;
 
   let name = props.showAddress ? shortenAddress(`${publicKey}`) : '';

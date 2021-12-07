@@ -1,8 +1,7 @@
 import { LoadingOutlined } from '@ant-design/icons';
 import {
-  loadMetadataForUsers,
+  loadMetadataForUser,
   useConnection,
-  useUserAccounts,
 } from '@oyster/common';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Button, Col, Row, Spin } from 'antd';
@@ -19,21 +18,24 @@ export const ArtworksView = () => {
   const { whitelistedCreatorsByCreator, patchState } = useMeta();
   const connection = useConnection();
   const wallet = useWallet();
-  const { userAccounts } = useUserAccounts();
 
   useEffect(() => {
     (async () => {
+      if (!wallet.publicKey) {
+        return;
+      }
+
       setLoadingArt(true);
-      const metadataState = await loadMetadataForUsers(
+      const metadataState = await loadMetadataForUser(
         connection,
-        userAccounts,
+        wallet.publicKey?.toBase58(),
         whitelistedCreatorsByCreator,
       );
 
       patchState(metadataState);
       setLoadingArt(false);
     })();
-  }, [connection, wallet.connected, userAccounts]);
+  }, [connection, wallet.connected]);
 
   if (loadingArt) {
     return (

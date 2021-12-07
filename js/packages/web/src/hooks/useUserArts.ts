@@ -1,10 +1,4 @@
-import {
-  MasterEditionV1,
-  MetadataKey,
-  ParsedAccount,
-  TokenAccount,
-  useUserAccounts,
-} from '@oyster/common';
+import { MasterEditionV1, MetadataKey, ParsedAccount } from '@oyster/common';
 import BN from 'bn.js';
 import { SafetyDepositDraft } from '../actions/createAuctionManager';
 import {
@@ -16,19 +10,13 @@ import {
 import { useMeta } from './../contexts';
 
 export const useUserArts = (): SafetyDepositDraft[] => {
-  const { metadata, masterEditions, editions } = useMeta();
-  const { userAccounts } = useUserAccounts();
+  const { metadata, masterEditions, editions, accountsByMint } = useMeta();
 
-  const accountByMint = userAccounts.reduce((prev, acc) => {
-    prev.set(acc.info.mint.toBase58(), acc);
-    return prev;
-  }, new Map<string, TokenAccount>());
+  const ownedMetadata = metadata.filter(m => {
+    const userAccount = accountsByMint[m.info.mint];
 
-  const ownedMetadata = metadata.filter(
-    m =>
-      accountByMint.has(m.info.mint) &&
-      (accountByMint?.get(m.info.mint)?.info?.amount?.toNumber() || 0) > 0,
-  );
+    return userAccount && (userAccount.data.amount.toNumber() || 0) > 0;
+  });
 
   const possibleEditions = ownedMetadata.map(m =>
     m.info.edition ? editions[m.info.edition] : undefined,
@@ -41,14 +29,15 @@ export const useUserArts = (): SafetyDepositDraft[] => {
   const safetyDeposits: SafetyDepositDraft[] = [];
   let i = 0;
   ownedMetadata.forEach(m => {
-    const a = accountByMint.get(m.info.mint);
+    const a = accountsByMint[m.info.mint];
     let masterA;
     const masterEdition = possibleMasterEditions[i];
     if (masterEdition?.info.key == MetadataKey.MasterEditionV1) {
-      masterA = accountByMint.get(
-        (masterEdition as ParsedAccount<MasterEditionV1>)?.info.printingMint ||
-          '',
-      );
+      masterA =
+        accountsByMint[
+          (masterEdition as ParsedAccount<MasterEditionV1>)?.info
+            .printingMint || ''
+        ];
     }
 
     let winningConfigType: WinningConfigType;
@@ -66,11 +55,11 @@ export const useUserArts = (): SafetyDepositDraft[] => {
 
     if (a) {
       safetyDeposits.push({
-        holding: a.pubkey,
+        holding: a.pubkey.toBase58(),
         edition: possibleEditions[i],
         masterEdition,
         metadata: m,
-        printingMintHolding: masterA?.pubkey,
+        printingMintHolding: masterA?.data.mint.toBase58(),
         winningConfigType,
         amountRanges: [],
         participationConfig:

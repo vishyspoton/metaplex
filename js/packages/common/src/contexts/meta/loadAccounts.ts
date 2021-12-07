@@ -1,4 +1,4 @@
-import { uniqWith, merge } from 'lodash';
+import { uniqWith, merge, keyBy } from 'lodash';
 import {
   AUCTION_ID,
   METADATA_PROGRAM_ID,
@@ -7,6 +7,7 @@ import {
   toPublicKey,
   VAULT_ID,
 } from '../../utils/ids';
+import { programs } from '@metaplex/js';
 import { getStoreID } from '../../utils';
 import { MAX_WHITELISTED_CREATOR_SIZE, TokenAccount } from '../../models';
 import {
@@ -51,6 +52,7 @@ import { getProgramAccounts } from './web3';
 import { createPipelineExecutor } from '../../utils/createPipelineExecutor';
 import { programIds } from '../..';
 const MULTIPLE_ACCOUNT_BATCH_SIZE = 100;
+const { TokenAccount } = programs;
 
 const queryStoreIndexer = async (
   connection: Connection,
@@ -81,9 +83,9 @@ const queryStoreIndexer = async (
   }
 };
 
-export const loadMetadataForUsers = async (
+export const loadMetadataForUser = async (
   connection: Connection,
-  userTokenAccounts: TokenAccount[],
+  pubkey: StringPublicKey,
   whitelistedCreatorsByCreator: Record<
     string,
     ParsedAccount<WhitelistedCreator>
@@ -97,17 +99,22 @@ export const loadMetadataForUsers = async (
   let batches = [];
   const editions = [];
 
+  const userTokenAccounts = await TokenAccount.getTokenAccountsByOwner(
+    connection,
+    pubkey,
+  );
+
   for (let i = 0; i < userTokenAccounts.length; i++) {
-    if (userTokenAccounts[i].info.amount.toNumber() == 1) {
+    if (userTokenAccounts[i].data.amount.toNumber() == 1) {
       if (2 + currBatch.length > MULTIPLE_ACCOUNT_BATCH_SIZE) {
         batches.push(currBatch);
         currBatch = [];
       } else {
         const edition = await getEdition(
-          userTokenAccounts[i].info.mint.toBase58(),
+          userTokenAccounts[i].data.mint.toBase58(),
         );
         const newAdd = [
-          await getMetadata(userTokenAccounts[i].info.mint.toBase58()),
+          await getMetadata(userTokenAccounts[i].data.mint.toBase58()),
           edition,
         ];
         editions.push(edition);
@@ -209,6 +216,11 @@ export const loadMetadataForUsers = async (
   await postProcessMetadata({ ...state, whitelistedCreatorsByCreator });
 
   console.log('-------->User metadata processing complete.');
+
+  state.accountsByMint = keyBy(userTokenAccounts, account =>
+    account.data.mint.toBase58(),
+  );
+
   return state;
 };
 

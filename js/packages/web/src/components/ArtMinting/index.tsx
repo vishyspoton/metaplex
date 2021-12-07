@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { actions } from "@metaplex/js"
 import { MintLayout, AccountLayout } from '@solana/spl-token';
 import { Button, Form, Input, Modal, InputNumber } from 'antd';
 import debounce from 'lodash/debounce';
@@ -10,6 +11,7 @@ import {
   MetadataKey,
   MetaplexOverlay,
   useConnection,
+  useMeta,
   useUserAccounts,
 } from '@oyster/common';
 import { useArt } from '../../hooks';
@@ -27,7 +29,7 @@ interface ArtMintingProps {
 export const ArtMinting = ({ id, onMint }: ArtMintingProps) => {
   const wallet = useWallet();
   const connection = useConnection();
-  const { accountByMint } = useUserAccounts();
+  const { accountsByMint } = useMeta();
   const [showMintModal, setShowMintModal] = useState<boolean>(false);
   const [showCongrats, setShowCongrats] = useState<boolean>(false);
   const [mintingDestination, setMintingDestination] = useState<string>('');
@@ -39,13 +41,13 @@ export const ArtMinting = ({ id, onMint }: ArtMintingProps) => {
   const walletPubKey = wallet?.publicKey?.toString() || '';
   const maxEditionsToMint = art.maxSupply! - art.supply!;
   const isArtMasterEdition = art.type === ArtType.Master;
-  const artMintTokenAccount = accountByMint.get(art.mint!);
+  const artMintTokenAccount = accountsByMint[art.mint!];
   const isArtOwnedByUser =
-    ((accountByMint.has(art.mint!) &&
-      artMintTokenAccount?.info.amount.toNumber()) ||
+    ((accountsByMint[art.mint!] &&
+      artMintTokenAccount?.data.amount.toNumber()) ||
       0) > 0;
   const isMasterEditionV1 = artMintTokenAccount
-    ? decodeMasterEdition(artMintTokenAccount.account.data).key ===
+    ? decodeMasterEdition(artMintTokenAccount.info.data).key ===
     MetadataKey.MasterEditionV1
     : false;
   const renderMintEdition =
@@ -121,6 +123,11 @@ export const ArtMinting = ({ id, onMint }: ArtMintingProps) => {
   const mint = async () => {
     try {
       setIsLoading(true);
+
+      if (!art.mint) {
+        return;
+      }
+
       await mintEditionsToWallet(
         art,
         wallet!,
@@ -129,6 +136,7 @@ export const ArtMinting = ({ id, onMint }: ArtMintingProps) => {
         editions,
         mintingDestination,
       );
+
       onSuccessfulMint();
     } catch (e) {
       console.error(e);
