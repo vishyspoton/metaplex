@@ -17,7 +17,7 @@ import {
   decodePrizeTrackingTicket,
   BidRedemptionTicketV2,
   decodeSafetyDepositConfig,
-  SafetyDepositConfig,
+  SafetyDepositConfigV2,
   decodeAuctionCache,
   AuctionCache,
   decodeStoreIndexer,
@@ -150,7 +150,7 @@ export const processMetaplexAccounts: ProcessAccountsFunc = async (
 
     if (isSafetyDepositConfigV1Account(account)) {
       const config = decodeSafetyDepositConfig(account.data);
-      const parsedAccount: ParsedAccount<SafetyDepositConfig> = {
+      const parsedAccount: ParsedAccount<SafetyDepositConfigV2> = {
         pubkey,
         account,
         info: config,

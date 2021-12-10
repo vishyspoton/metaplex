@@ -26,10 +26,10 @@ import {
   BidRedemptionTicket,
   BidRedemptionTicketV2,
   getBidderKeys,
-  MetaplexKey,
-  SafetyDepositConfig,
+  SafetyDepositConfigV2,
   WinningConfigType,
   AuctionViewItem,
+  MetaplexKey,
 } from '@oyster/common';
 import { merge, take, drop } from 'lodash';
 import { Connection } from '@solana/web3.js';
@@ -474,7 +474,7 @@ export function processAccountsIntoAuctionView(
   vaults: Record<string, ParsedAccount<Vault>>,
   safetyDepositConfigsByAuctionManagerAndIndex: Record<
     string,
-    ParsedAccount<SafetyDepositConfig>
+    ParsedAccount<SafetyDepositConfigV2>
   >,
   masterEditionsByPrintingMint: Record<string, ParsedAccount<MasterEditionV1>>,
   masterEditionsByOneTimeAuthMint: Record<
@@ -529,7 +529,7 @@ export function processAccountsIntoAuctionView(
     const vault = vaults[auctionManagerInstance.info.vault];
     const auctionManagerKey = auctionManagerInstance.pubkey;
 
-    const safetyDepositConfigs: ParsedAccount<SafetyDepositConfig>[] =
+    const safetyDepositConfigs: ParsedAccount<SafetyDepositConfigV2>[] =
       buildListWhileNonZero(
         safetyDepositConfigsByAuctionManagerAndIndex,
         auctionManagerKey,

@@ -1,7 +1,7 @@
 use {
     crate::{
         deprecated_state::AuctionManagerSettingsV1,
-        state::{SafetyDepositConfig, TupleNumericType, PREFIX},
+        state::{SafetyDepositConfig, SafetyDepositConfigV2, TupleNumericType, PREFIX},
     },
     borsh::{BorshDeserialize, BorshSerialize},
     metaplex_token_metadata::state::EDITION_MARKER_BIT_SIZE,
@@ -665,6 +665,34 @@ pub enum MetaplexInstruction {
     ///   7. `[]` Rent sysvar
     ///   8. `[]` Clock sysvar
     SetAuctionCache,
+
+    /// NOTE: Requires an AuctionManagerV2.
+    ///
+    /// Validates that a given safety deposit box has in it contents that match the given SafetyDepositConfig, and creates said config.
+    /// A stateful call, this will error out if you call it a second time after validation has occurred.
+    ///   0. `[writable]` Uninitialized Safety deposit config, pda of seed ['metaplex', program id, auction manager key, safety deposit key]
+    ///   1. `[writable]` AuctionWinnerTokenTypeTracker, pda of seed ['metaplex', program id, auction manager key, 'totals']
+    ///   2. `[writable]` Auction manager
+    ///   3. `[writable]` Metadata account
+    ///   4. `[writable]` Original authority lookup - unallocated uninitialized pda account with seed ['metaplex', auction key, metadata key]
+    ///                   We will store original authority here to return it later.
+    ///   5. `[]` A whitelisted creator entry for the store of this auction manager pda of ['metaplex', store key, creator key]
+    ///   where creator key comes from creator list of metadata, any will do
+    ///   6. `[]` The auction manager's store key
+    ///   7. `[]` Safety deposit box account
+    ///   8. `[]` Safety deposit box storage account where the actual nft token is stored
+    ///   9. `[]` Mint account of the token in the safety deposit box
+    ///   10. `[]` Edition OR MasterEdition record key
+    ///           Remember this does not need to be an existing account (may not be depending on token), just is a pda with seed
+    ///            of ['metadata', program id, Printing mint id, 'edition']. - remember PDA is relative to token metadata program.
+    ///   11. `[]` Vault account
+    ///   12. `[signer]` Authority
+    ///   13. `[signer optional]` Metadata Authority - Signer only required if doing a full ownership txfer
+    ///   14. `[signer]` Payer
+    ///   15. `[]` Token metadata program
+    ///   16. `[]` System
+    ///   17. `[]` Rent sysvar
+    ValidateSafetyDepositBoxV3(SafetyDepositConfigV2),
 }
 
 /// Creates an DeprecatedInitAuctionManager instruction

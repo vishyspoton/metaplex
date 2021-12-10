@@ -64,6 +64,7 @@ export enum MetaplexKey {
   AuctionWinnerTokenTypeTrackerV1 = 12,
   StoreIndexerV1 = 13,
   AuctionCacheV1 = 14,
+  SafetyDepositConfigV2 = 15,
 }
 export class PrizeTrackingTicket {
   key: MetaplexKey = MetaplexKey.PrizeTrackingTicketV1;
@@ -150,7 +151,7 @@ export class AuctionManager {
   vault: StringPublicKey;
   acceptPayment: StringPublicKey;
   numWinners: BN;
-  safetyDepositConfigs: ParsedAccount<SafetyDepositConfig>[];
+  safetyDepositConfigs: ParsedAccount<SafetyDepositConfigV2>[];
   bidRedemptions: ParsedAccount<BidRedemptionTicketV2>[];
   instance: ParsedAccount<AuctionManagerV1 | AuctionManagerV2>;
   status: AuctionManagerStatus;
@@ -161,7 +162,7 @@ export class AuctionManager {
     instance: ParsedAccount<AuctionManagerV1 | AuctionManagerV2>;
     auction: ParsedAccount<AuctionData>;
     vault: ParsedAccount<Vault>;
-    safetyDepositConfigs: ParsedAccount<SafetyDepositConfig>[];
+    safetyDepositConfigs: ParsedAccount<SafetyDepositConfigV2>[];
     bidRedemptions: ParsedAccount<BidRedemptionTicketV2>[];
   }) {
     this.pubkey = args.instance.pubkey;
@@ -576,7 +577,7 @@ export const decodeBidRedemptionTicket = (buffer: Buffer) => {
 };
 
 export const decodeSafetyDepositConfig = (buffer: Buffer) => {
-  return new SafetyDepositConfig({
+  return new SafetyDepositConfigV2({
     data: buffer,
   });
 };
@@ -715,8 +716,8 @@ export class InitAuctionManagerV2Args {
   }
 }
 
-export class SafetyDepositConfig {
-  key: MetaplexKey = MetaplexKey.SafetyDepositConfigV1;
+export class SafetyDepositConfigV2 {
+  key: MetaplexKey = MetaplexKey.SafetyDepositConfigV2;
   auctionManager: StringPublicKey = SystemProgram.programId.toBase58();
   order: BN = new BN(0);
   winningConfigType: WinningConfigType = WinningConfigType.PrintingV2;
@@ -725,6 +726,7 @@ export class SafetyDepositConfig {
   amountRanges: AmountRange[] = [];
   participationConfig: ParticipationConfigV2 | null = null;
   participationState: ParticipationStateV2 | null = null;
+  primarySaleHappened: boolean = false; // Anyways this is overwritten by the Program
 
   constructor(args: {
     data?: Uint8Array;
@@ -737,6 +739,7 @@ export class SafetyDepositConfig {
       amountRanges: AmountRange[];
       participationConfig: ParticipationConfigV2 | null;
       participationState: ParticipationStateV2 | null;
+      primarySaleHappened: boolean;
     };
   }) {
     if (args.directArgs) {
@@ -795,6 +798,9 @@ export class SafetyDepositConfig {
           collectedToAcceptPayment,
         });
       }
+
+      this.primarySaleHappened = args.data[offset] != 0;
+      offset += 1;
     }
   }
 
@@ -827,11 +833,10 @@ export class SafetyDepositConfig {
     return new BN(0);
   }
 }
-
-export class ValidateSafetyDepositBoxV2Args {
-  instruction = 18;
-  safetyDepositConfig: SafetyDepositConfig;
-  constructor(safetyDeposit: SafetyDepositConfig) {
+export class ValidateSafetyDepositBoxV3Args {
+  instruction = 23;
+  safetyDepositConfig: SafetyDepositConfigV2;
+  constructor(safetyDeposit: SafetyDepositConfigV2) {
     this.safetyDepositConfig = safetyDeposit;
   }
 }
@@ -971,7 +976,7 @@ export const SCHEMA = new Map<any, any>([
     },
   ],
   [
-    SafetyDepositConfig,
+    SafetyDepositConfigV2,
     {
       kind: 'struct',
       fields: [
@@ -987,6 +992,7 @@ export const SCHEMA = new Map<any, any>([
           { kind: 'option', type: ParticipationConfigV2 },
         ],
         ['participationState', { kind: 'option', type: ParticipationStateV2 }],
+        ['primarySaleHappened', 'u8'],
       ],
     },
   ],
@@ -1050,12 +1056,12 @@ export const SCHEMA = new Map<any, any>([
     },
   ],
   [
-    ValidateSafetyDepositBoxV2Args,
+    ValidateSafetyDepositBoxV3Args,
     {
       kind: 'struct',
       fields: [
         ['instruction', 'u8'],
-        ['safetyDepositConfig', SafetyDepositConfig],
+        ['safetyDepositConfig', SafetyDepositConfigV2],
       ],
     },
   ],

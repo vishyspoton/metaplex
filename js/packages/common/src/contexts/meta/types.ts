@@ -19,7 +19,7 @@ import {
   BidRedemptionTicketV2,
   PayoutTicket,
   PrizeTrackingTicket,
-  SafetyDepositConfig,
+  SafetyDepositConfigV2,
   Store,
   StoreIndexer,
   WhitelistedCreator,
@@ -50,7 +50,7 @@ export interface MetaState {
   >;
   safetyDepositConfigsByAuctionManagerAndIndex: Record<
     string,
-    ParsedAccount<SafetyDepositConfig>
+    ParsedAccount<SafetyDepositConfigV2>
   >;
   bidRedemptionV2sByAuctionManagerAndWinningIndex: Record<
     string,
