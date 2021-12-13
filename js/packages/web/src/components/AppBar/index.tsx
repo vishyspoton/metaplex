@@ -50,37 +50,47 @@ export const AppBar = (props: P) => {
     }[];
   }[] = useMemo(() => {
     let menu = [
+      // {
+      //   key: 'listings',
+      //   title: 'Listings',
+      //   link: '/',
+      //   exact: true,
+      //   alt: [{ path: '/auction', exact: false }],
+      // },
       {
-        key: 'listings',
-        title: 'Listings',
-        link: '/',
-        exact: true,
-        alt: [{ path: '/auction', exact: false }],
-      },
-      {
-        key: 'artists',
-        title: 'Artists',
-        link: `/artists/${ownerAddress}`,
+        key: 'limited-editions',
+        title: 'Limited Editions',
+        link: `/limited-editions/${ownerAddress}`,
         exact: true,
         alt: [
-          { path: '/artists', exact: false },
+          { path: '/limited-editions', exact: false },
           { path: '/artworks', exact: false },
         ],
       },
+      {
+        key: 'airdropped',
+        title: 'Airdropped',
+        link: `/airdropped/${ownerAddress}`,
+        exact: true,
+        alt: [
+          { path: '/airdropped', exact: false },
+          { path: '/artworks', exact: false },
+        ],
+      }
     ];
 
-    if (connected) {
-      menu = [
-        ...menu,
-        {
-          key: 'owned',
-          title: 'Owned',
-          link: '/owned',
-          exact: true,
-          alt: [],
-        },
-      ];
-    }
+    // if (connected) {
+    //   menu = [
+    //     ...menu,
+    //     {
+    //       key: 'owned',
+    //       title: 'Owned',
+    //       link: '/owned',
+    //       exact: true,
+    //       alt: [],
+    //     },
+    //   ];
+    // }
 
     if (publicKey?.toBase58() === ownerAddress) {
       menu = [

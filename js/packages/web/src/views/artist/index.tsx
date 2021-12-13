@@ -8,8 +8,12 @@ import { ArtistCard } from '../../components/ArtistCard';
 import { MetaplexMasonry } from '../../components/MetaplexMasonry';
 import { useCreatorArts } from '../../hooks';
 
-export const ArtistView = () => {
-  const { id } = useParams<{ id: string }>();
+interface Category {
+  category: "limited" | "airdropped";
+}
+
+export const ArtistView = (category: Category) => {
+  const { id } = useParams<{ id: string; }>();
   const { whitelistedCreatorsByCreator, patchState } = useMeta();
   const [loadingArt, setLoadingArt] = useState(true);
   const artwork = useCreatorArts(id);
@@ -28,6 +32,7 @@ export const ArtistView = () => {
       const artistMetadataState = await loadMetadataForCreator(
         connection,
         creator,
+        category.category,
       );
 
       patchState(artistMetadataState);

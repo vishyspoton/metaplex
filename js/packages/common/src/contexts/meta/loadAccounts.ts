@@ -1000,54 +1000,57 @@ export const loadMetadataAndEditionsBySafetyDepositBoxes = async (
 export const loadMetadataForCreator = async (
   connection: Connection,
   creator: ParsedAccount<WhitelistedCreator>,
+  category: 'limited' | 'airdropped',
 ): Promise<MetaState> => {
   const state: MetaState = getEmptyMetaState();
   const updateState = makeSetter(state);
 
-  const response = await getProgramAccounts(connection, METADATA_PROGRAM_ID, {
-    filters: [
-      {
-        memcmp: {
-          offset:
-            1 + // key
-            32 + // update auth
-            32 + // mint
-            4 + // name string length
-            MAX_NAME_LENGTH + // name
-            4 + // uri string length
-            MAX_URI_LENGTH + // uri
-            4 + // symbol string length
-            MAX_SYMBOL_LENGTH + // symbol
-            2 + // seller fee basis points
-            1 + // whether or not there is a creators vec
-            4, // creators vec length
-          bytes: creator.info.address,
+  if (category === 'limited') {
+    const response = await getProgramAccounts(connection, METADATA_PROGRAM_ID, {
+      filters: [
+        {
+          memcmp: {
+            offset:
+              1 + // key
+              32 + // update auth
+              32 + // mint
+              4 + // name string length
+              MAX_NAME_LENGTH + // name
+              4 + // uri string length
+              MAX_URI_LENGTH + // uri
+              4 + // symbol string length
+              MAX_SYMBOL_LENGTH + // symbol
+              2 + // seller fee basis points
+              1 + // whether or not there is a creators vec
+              4, // creators vec length
+            bytes: creator.info.address,
+          },
         },
-      },
-    ],
-  });
+      ],
+    });
 
-  const metadata = response.reduce((memo, { account, pubkey }) => {
-    if (!account) {
-      return memo;
-    }
+    const metadata = response.reduce((memo, { account, pubkey }) => {
+      if (!account) {
+        return memo;
+      }
 
-    const metadata = {
-      pubkey,
-      account,
-      info: decodeMetadata(account.data),
-    };
+      const metadata = {
+        pubkey,
+        account,
+        info: decodeMetadata(account.data),
+      };
 
-    return [...memo, metadata];
-  }, [] as ParsedAccount<Metadata>[]);
+      return [...memo, metadata];
+    }, [] as ParsedAccount<Metadata>[]);
 
-  const readyMetadata = metadata.map(m =>
-    initMetadata(m, { [creator.info.address]: creator }, updateState),
-  );
+    const readyMetadata = metadata.map(m =>
+      initMetadata(m, { [creator.info.address]: creator }, updateState),
+    );
 
-  await Promise.all(readyMetadata);
-
-  await pullEditions(connection, state);
+    await Promise.all(readyMetadata);
+  } else if (category === 'airdropped') {
+    await pullEditions(connection, state);
+  }
 
   return state;
 };
@@ -1065,7 +1068,9 @@ const pullMetadataByCreators = async (
 
   const additionalPromises: Promise<MetaState>[] = [];
   for (const creator of whitelistedCreators) {
-    additionalPromises.push(loadMetadataForCreator(connection, creator));
+    additionalPromises.push(
+      loadMetadataForCreator(connection, creator, 'limited'),
+    );
   }
 
   const responses = await Promise.all(additionalPromises);
